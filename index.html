@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Calculadora PWA</title>
+    <!-- Tailwind CSS para design limpo e responsivo -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        body {
+            background-color: #0f172a;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        /* Efeito de clique suave nos botões */
+        .btn-calc {
+            transition: all 0.1s ease-in-out;
+        }
+        .btn-calc:active {
+            transform: scale(0.95);
+            opacity: 0.8;
+        }
+    </style>
+
+    <!-- GERAÇÃO DINÂMICA DO MANIFESTO PWA (Favicon e suporte a tela inicial) -->
+    <script>
+        const manifestData = {
+            "name": "Calculadora PWA",
+            "short_name": "Calculadora",
+            "start_url": ".",
+            "display": "standalone",
+            "background_color": "#0f172a",
+            "theme_color": "#0f172a",
+            "description": "Uma calculadora simples e rápida que funciona offline como aplicativo.",
+            "icons": [
+                {
+                    "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' fill='%233b82f6'><rect width='512' height='512' rx='100' fill='%231e293b'/><text x='50%' y='60%' dominant-baseline='middle' text-anchor='middle' font-size='280' font-family='sans-serif' font-weight='bold' fill='%233b82f6'>+=</text></svg>",
+                    "sizes": "192x192 512x512",
+                    "type": "image/svg+xml",
+                    "purpose": "any maskable"
+                }
+            ]
+        };
+
+        const stringManifest = JSON.stringify(manifestData);
+        const manifestBlob = new Blob([stringManifest], { type: 'application/json' });
+        const manifestURL = URL.createObjectURL(manifestBlob);
+
+        const linkManifest = document.createElement('link');
+        linkManifest.rel = 'manifest';
+        linkManifest.href = manifestURL;
+        document.head.appendChild(linkManifest);
+    </script>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+
+    <!-- Card Principal da Calculadora -->
+    <div class="w-full max-w-xs sm:max-w-sm bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-2xl space-y-4">
+        
+        <!-- Cabeçalho com Status PWA e Botão de Instalação -->
+        <div class="flex items-center justify-between text-xs text-slate-400 px-1">
+            <span class="flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>PWA Ativo</span>
+            </span>
+            
+            <!-- Botão de Instalar (só aparece quando o celular suportar a instalação) -->
+            <button id="btn-install" class="hidden bg-blue-600 hover:bg-blue-500 text-white font-medium px-2.5 py-1 rounded-full transition text-[11px] shadow">
+                📲 Instalar App
+            </button>
+        </div>
+
+        <!-- Visor da Calculadora -->
+        <div class="bg-slate-950/80 border border-slate-800/80 rounded-2xl p-4 text-right overflow-hidden shadow-inner">
+            <!-- Display de histórico/operação atual -->
+            <div id="history-display" class="text-slate-500 text-sm h-5 font-mono truncate"></div>
+            <!-- Display principal -->
+            <div id="main-display" class="text-white text-4xl sm:text-5xl font-semibold tracking-tight font-mono truncate py-1">0</div>
+        </div>
+
+        <!-- Teclado da Calculadora -->
+        <div class="grid grid-cols-4 gap-2.5 text-lg font-medium">
+            <!-- Linha 1 -->
+            <button onclick="clearAll()" class="btn-calc bg-slate-800 hover:bg-slate-700 text-red-400 p-4 rounded-2xl font-bold">C</button>
+            <button onclick="toggleSign()" class="btn-calc bg-slate-800 hover:bg-slate-700 text-slate-300 p-4 rounded-2xl">+/-</button>
+            <button onclick="percentage()" class="btn-calc bg-slate-800 hover:bg-slate-700 text-slate-300 p-4 rounded-2xl">%</button>
+            <button onclick="setOperator('/')" class="btn-calc bg-blue-600 hover:bg-blue-500 text-white p-4 rounded-2xl text-xl font-bold">÷</button>
+
+            <!-- Linha 2 -->
+            <button onclick="appendDigit('7')" class="btn-calc bg-slate-800/60 hover:bg-slate-700 text-white p-4 rounded-2xl">7</button>
+            <button onclick="appendDigit('8')" class="btn-calc bg-slate-800/60 hover:bg-slate-700 text-white p-4 rounded-2xl">8</button>
+            <button onclick="appendDigit('9')" class="btn-calc bg-slate-800/60 hover:bg-slate-700 text-white p-4 rounded-2xl">9</button>
+            <button onclick="setOperator('*')" class="btn-calc bg-blue-600 hover:bg-blue-500 text-white p-4 rounded-2xl text-xl font-bold">×</button>
+
+            <!-- Linha 3 -->
+            <button onclick="appendDigit('4')" class="btn-calc bg-slate-800/60 hover:bg-slate-700 text-white p-4 rounded-2xl">4</button>
+            <button onclick="appendDigit('5')" class="btn-calc bg-slate-800/60 hover:bg-slate-700 text-white p-4 rounded-2xl">5</button>
+            <button onclick="appendDigit('6')" class="btn-calc bg-slate-800/60 hover:bg-slate-700 text-white p-4 rounded-2xl">6</button>
+            <button onclick="setOperator('-')" class="btn-calc bg-blue-600 hover:bg-blue-500 text-white p-4 rounded-2xl text-xl font-bold">-</button>
+
+            <!-- Linha 4 -->
+            <button onclick="appendDigit('1')" class="btn-calc bg-slate-800/60 hover:bg-slate-700 text-white p-4 rounded-2xl">1</button>
+            <button onclick="appendDigit('2')" class="btn-calc bg-slate-800/60 hover:bg-slate-700 text-white p-4 rounded-2xl">2</button>
+            <button onclick="appendDigit('3')" class="btn-calc bg-slate-800/60 hover:bg-slate-700 text-white p-4 rounded-2xl">3</button>
+            <button onclick="setOperator('+')" class="btn-calc bg-blue-600 hover:bg-blue-500 text-white p-4 rounded-2xl text-xl font-bold">+</button>
+
+            <!-- Linha 5 -->
+            <button onclick="backspace()" class="btn-calc bg-slate-800 hover:bg-slate-700 text-slate-300 p-4 rounded-2xl">⌫</button>
+            <button onclick="appendDigit('0')" class="btn-calc bg-slate-800/60 hover:bg-slate-700 text-white p-4 rounded-2xl">0</button>
+            <button onclick="appendDot()" class="btn-calc bg-slate-800/60 hover:bg-slate-700 text-white p-4 rounded-2xl font-bold">,</button>
+            <button onclick="calculate()" class="btn-calc bg-emerald-600 hover:bg-emerald-500 text-white p-4 rounded-2xl text-xl font-bold">=</button>
+        </div>
+    </div>
+
+    <!-- LÓGICA DA CALCULADORA EM JAVASCRIPT -->
+    <script>
+        let currentValue = '0';
+        let previousValue = '';
+        let operator = null;
+        let shouldResetDisplay = false;
+
+        const mainDisplay = document.getElementById('main-display');
+        const historyDisplay = document.getElementById('history-display');
+
+        function updateDisplay() {
+            mainDisplay.textContent = currentValue.replace('.', ',');
+            if (operator && previousValue !== '') {
+                const opSymbol = operator === '*' ? '×' : operator === '/' ? '÷' : operator;
+                historyDisplay.textContent = `${previousValue.replace('.', ',')} ${opSymbol}`;
+            } else {
+                historyDisplay.textContent = '';
+            }
+        }
+
+        function appendDigit(digit) {
+            if (currentValue === '0' || shouldResetDisplay) {
+                currentValue = digit;
+                shouldResetDisplay = false;
+            } else {
+                if (currentValue.length < 12) {
+                    currentValue += digit;
+                }
+            }
+            updateDisplay();
+        }
+
+        function appendDot() {
+            if (shouldResetDisplay) {
+                currentValue = '0.';
+                shouldResetDisplay = false;
+            } else if (!currentValue.includes('.')) {
+                currentValue += '.';
+            }
+            updateDisplay();
+        }
+
+        function clearAll() {
+            currentValue = '0';
+            previousValue = '';
+            operator = null;
+            shouldResetDisplay = false;
+            updateDisplay();
+        }
+
+        function backspace() {
+            if (shouldResetDisplay) return;
+            if (currentValue.length === 1 || (currentValue.length === 2 && currentValue.startsWith('-'))) {
+                currentValue = '0';
+            } else {
+                currentValue = currentValue.slice(0, -1);
+            }
+            updateDisplay();
+        }
+
+        function toggleSign() {
+            if (currentValue === '0') return;
+            currentValue = (parseFloat(currentValue) * -1).toString();
+            updateDisplay();
+        }
+
+        function percentage() {
+            currentValue = (parseFloat(currentValue) / 100).toString();
+            updateDisplay();
+        }
+
+        function setOperator(op) {
+            if (operator && !shouldResetDisplay) {
+                calculate();
+            }
+            previousValue = currentValue;
+            operator = op;
+            shouldResetDisplay = true;
+            updateDisplay();
+        }
+
+        function calculate() {
+            if (!operator || previousValue === '') return;
+
+            const prev = parseFloat(previousValue);
+            const current = parseFloat(currentValue);
+            let result = 0;
+
+            switch (operator) {
+                case '+': result = prev + current; break;
+                case '-': result = prev - current; break;
+                case '*': result = prev * current; break;
+                case '/': 
+                    if (current === 0) {
+                        currentValue = 'Erro';
+                        operator = null;
+                        previousValue = '';
+                        shouldResetDisplay = true;
+                        updateDisplay();
+                        return;
+                    }
+                    result = prev / current; 
+                    break;
+            }
+
+            // Arredondamento para evitar problemas de ponto flutuante do JS (ex: 0.1 + 0.2)
+            result = Math.round(result * 1e10) / 1e10;
+            
+            historyDisplay.textContent = `${previousValue.replace('.', ',')} ${operator === '*' ? '×' : operator === '/' ? '÷' : operator} ${currentValue.replace('.', ',')} =`;
+            currentValue = result.toString();
+            operator = null;
+            previousValue = '';
+            shouldResetDisplay = true;
+            mainDisplay.textContent = currentValue.replace('.', ',');
+        }
+
+        // Suporte a Atalhos de Teclado
+        document.addEventListener('keydown', (e) => {
+            if (e.key >= '0' && e.key <= '9') appendDigit(e.key);
+            if (e.key === '.' || e.key === ',') appendDot();
+            if (e.key === '+') setOperator('+');
+            if (e.key === '-') setOperator('-');
+            if (e.key === '*') setOperator('*');
+            if (e.key === '/') setOperator('/');
+            if (e.key === 'Enter' || e.key === '=') calculate();
+            if (e.key === 'Backspace') backspace();
+            if (e.key === 'Escape' || e.key === 'c' || e.key === 'C') clearAll();
+        });
+    </script>
+
+    <!-- SERVICE WORKER (Para permitir instalação e uso offline) -->
+    <script>
+        // Código do Service Worker para cache local
+        const swCode = `
+            const CACHE_NAME = 'calc-pwa-v1';
+            self.addEventListener('install', (e) => {
+                self.skipWaiting();
+            });
+
+            self.addEventListener('activate', (e) => {
+                e.waitUntil(clients.claim());
+            });
+
+            self.addEventListener('fetch', (e) => {
+                e.respondWith(
+                    fetch(e.request).catch(() => caches.match(e.request))
+                );
+            });
+        `;
+
+        // Registro dinâmico do Service Worker
+        if ('serviceWorker' in navigator) {
+            const blob = new Blob([swCode], { type: 'application/javascript' });
+            const swUrl = URL.createObjectURL(blob);
+            
+            navigator.serviceWorker.register(swUrl)
+                .then(() => console.log('Service Worker registrado com sucesso.'))
+                .catch(err => console.log('Falha ao registrar Service Worker:', err));
+        }
+
+        // Lógica para capturar o evento de instalação no Celular/Desktop
+        let deferredPrompt;
+        const btnInstall = document.getElementById('btn-install');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Previne a faixa padrão em navegadores antigos
+            e.preventDefault();
+            deferredPrompt = e;
+            // Exibe nosso botão personalizado de instalação
+            btnInstall.classList.remove('hidden');
+        });
+
+        btnInstall.addEventListener('click', async () => {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+                btnInstall.classList.add('hidden');
+            }
+            deferredPrompt = null;
+        });
+    </script>
+</body>
+</html>
