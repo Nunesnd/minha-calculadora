@@ -14,8 +14,20 @@
 <body>
   <main class="calculator">
     <header class="top-bar">
-      <span class="status"><span class="status-dot"></span> Calculadora pronta</span>
-      <button id="btn-install" class="install-button" type="button" hidden>📲 Instalar app</button>
+      <button
+        id="btn-theme"
+        class="theme-button"
+        type="button"
+        aria-label="Alterar tema"
+        title="Alterar tema"
+      >
+        <span aria-hidden="true">◐</span>
+        <span id="theme-label">Clássico</span>
+      </button>
+
+      <button id="btn-install" class="install-button" type="button" hidden>
+        📲 Instalar app
+      </button>
     </header>
 
     <section class="display" aria-label="Visor da calculadora" aria-live="polite">

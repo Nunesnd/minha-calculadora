@@ -227,6 +227,48 @@ window.addEventListener("appinstalled", () => {
   btnInstall.hidden = true;
 });
 
+// Temas disponíveis. O tema escolhido fica salvo neste dispositivo.
+const themes = [
+  { id: "classic", label: "Clássico" },
+  { id: "dark", label: "Escuro" },
+  { id: "light", label: "Claro" }
+];
+
+const themeButton = document.getElementById("btn-theme");
+const themeLabel = document.getElementById("theme-label");
+
+function applyTheme(themeId) {
+  const selectedTheme = themes.find((theme) => theme.id === themeId) || themes[0];
+
+  document.documentElement.dataset.theme = selectedTheme.id;
+  themeLabel.textContent = selectedTheme.label;
+  themeButton.setAttribute("aria-label", `Tema atual: ${selectedTheme.label}. Clique para alterar.`);
+  themeButton.title = `Tema atual: ${selectedTheme.label}. Clique para alterar.`;
+
+  try {
+    localStorage.setItem("calculadora-theme", selectedTheme.id);
+  } catch (error) {
+    // A calculadora continua funcionando mesmo se o armazenamento estiver bloqueado.
+  }
+}
+
+function cycleTheme() {
+  const currentTheme = document.documentElement.dataset.theme || "classic";
+  const currentIndex = themes.findIndex((theme) => theme.id === currentTheme);
+  const nextTheme = themes[(currentIndex + 1) % themes.length];
+  applyTheme(nextTheme.id);
+}
+
+themeButton.addEventListener("click", cycleTheme);
+
+let savedTheme = "classic";
+try {
+  savedTheme = localStorage.getItem("calculadora-theme") || "classic";
+} catch (error) {
+  // Usa o tema clássico quando o armazenamento não estiver disponível.
+}
+applyTheme(savedTheme);
+
 updateDisplay();
 
 // Registro do Service Worker externo.
