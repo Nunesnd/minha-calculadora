@@ -4,62 +4,79 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#0f172a">
-  <meta name="description" content="Calculadora simples, rápida e instalável.">
-  <title>Calculadora</title>
+  <meta name="description" content="Simulador de Calculadora Financeira RPN.">
+  <title>Calculadora Financeira RPN</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon-192.png">
   <link rel="stylesheet" href="styles.css">
   <script src="script.js" defer></script>
 </head>
 <body>
-  <main class="calculator">
+  <main class="hp-calculator">
     <header class="top-bar">
-      <button
-        id="btn-theme"
-        class="theme-button"
-        type="button"
-        aria-label="Alterar tema"
-        title="Alterar tema"
-      >
+      <div class="brand-title">FINANCIAL RPN</div>
+      <button id="btn-theme" class="theme-button" type="button" aria-label="Alterar tema">
         <span aria-hidden="true">◐</span>
         <span id="theme-label">Clássico</span>
       </button>
-
       <button id="btn-install" class="install-button" type="button" hidden>
-        📲 Instalar app
+        📲 Instalar Calculadora
       </button>
     </header>
 
-    <section class="display" aria-label="Visor da calculadora" aria-live="polite">
-      <div id="history-display" class="history-display"></div>
-      <div id="main-display" class="main-display">0</div>
+    <section class="lcd-display" aria-label="Visor da calculadora" aria-live="polite">
+      <div id="modifier-status" class="status-bar"></div>
+      <div id="main-display" class="main-display">0.00</div>
     </section>
 
     <section class="keypad" aria-label="Teclado da calculadora">
-      <button type="button" data-action="clear" class="key key-function key-clear">C</button>
-      <button type="button" data-action="sign" class="key key-function">+/-</button>
-      <button type="button" data-action="percent" class="key key-function">%</button>
-      <button type="button" data-operator="/" class="key key-operator">÷</button>
+      <!-- Linha 1 -->
+      <div class="key-container"><span class="label-f">n</span><button class="key key-gold-top" data-action="n">n</button><span class="label-g">12×</span></div>
+      <div class="key-container"><span class="label-f">i</span><button class="key key-gold-top" data-action="i">i</button><span class="label-g">12÷</span></div>
+      <div class="key-container"><span class="label-f">PV</span><button class="key key-gold-top" data-action="PV">PV</button><span class="label-g">CF0</span></div>
+      <div class="key-container"><span class="label-f">PMT</span><button class="key key-gold-top" data-action="PMT">PMT</button><span class="label-g">CFj</span></div>
+      <div class="key-container"><span class="label-f">FV</span><button class="key key-gold-top" data-action="FV">FV</button><span class="label-g">Nj</span></div>
+      <div class="key-container"><span class="label-f">CHS</span><button class="key" data-action="CHS">CHS</button><span class="label-g">DATE</span></div>
+      <div class="key-container"><span class="label-f">7</span><button class="key" data-digit="7">7</button><span class="label-g">BEG</span></div>
+      <div class="key-container"><span class="label-f">8</span><button class="key" data-digit="8">8</button><span class="label-g">END</span></div>
+      <div class="key-container"><span class="label-f">9</span><button class="key" data-digit="9">9</button><span class="label-g">MEM</span></div>
+      <div class="key-container"><span class="label-f">÷</span><button class="key key-operator" data-operator="/">÷</button><span class="label-g"></span></div>
 
-      <button type="button" data-digit="7" class="key key-number">7</button>
-      <button type="button" data-digit="8" class="key key-number">8</button>
-      <button type="button" data-digit="9" class="key key-number">9</button>
-      <button type="button" data-operator="*" class="key key-operator">×</button>
+      <!-- Linha 2 -->
+      <div class="key-container"><span class="label-f">yˣ</span><button class="key" data-action="power">yˣ</button><span class="label-g">√x</span></div>
+      <div class="key-container"><span class="label-f">1/x</span><button class="key" data-action="reciprocal">1/x</button><span class="label-g">eˣ</span></div>
+      <div class="key-container"><span class="label-f">%T</span><button class="key" data-action="pct_total">%T</button><span class="label-g">LN</span></div>
+      <div class="key-container"><span class="label-f">Δ%</span><button class="key" data-action="pct_delta">Δ%</button><span class="label-g">FRAC</span></div>
+      <div class="key-container"><span class="label-f">%</span><button class="key" data-action="percent">%</button><span class="label-g">INTG</span></div>
+      <div class="key-container"><span class="label-f">EEX</span><button class="key" data-action="EEX">EEX</button><span class="label-g">ΔDYS</span></div>
+      <div class="key-container"><span class="label-f">4</span><button class="key" data-digit="4">4</button><span class="label-g">D.MY</span></div>
+      <div class="key-container"><span class="label-f">5</span><button class="key" data-digit="5">5</button><span class="label-g">M.DY</span></div>
+      <div class="key-container"><span class="label-f">6</span><button class="key" data-digit="6">6</button><span class="label-g"></span></div>
+      <div class="key-container"><span class="label-f">×</span><button class="key key-operator" data-operator="*">×</button><span class="label-g"></span></div>
 
-      <button type="button" data-digit="4" class="key key-number">4</button>
-      <button type="button" data-digit="5" class="key key-number">5</button>
-      <button type="button" data-digit="6" class="key key-number">6</button>
-      <button type="button" data-operator="-" class="key key-operator">−</button>
+      <!-- Linha 3 -->
+      <div class="key-container"><span class="label-f">R/S</span><button class="key" data-action="RS">R/S</button><span class="label-g">P/R</span></div>
+      <div class="key-container"><span class="label-f">SST</span><button class="key" data-action="SST">SST</button><span class="label-g">BST</span></div>
+      <div class="key-container"><span class="label-f">R↓</span><button class="key" data-action="roll_down">R↓</button><span class="label-g">GTO</span></div>
+      <div class="key-container"><span class="label-f">x≷y</span><button class="key" data-action="swap">x≷y</button><span class="label-g">x=0</span></div>
+      <div class="key-container"><span class="label-f">CLx</span><button class="key" data-action="CLx">CLx</button><span class="label-g">x≤y</span></div>
+      <div class="key-container"><span class="label-f">ENTER</span><button class="key key-enter" data-action="ENTER">ENTER</button><span class="label-g">LSTx</span></div>
+      <div class="key-container"><span class="label-f">1</span><button class="key" data-digit="1">1</button><span class="label-g">x̂,r</span></div>
+      <div class="key-container"><span class="label-f">2</span><button class="key" data-digit="2">2</button><span class="label-g">ŷ,r</span></div>
+      <div class="key-container"><span class="label-f">3</span><button class="key" data-digit="3">3</button><span class="label-g">n!</span></div>
+      <div class="key-container"><span class="label-f">−</span><button class="key key-operator" data-operator="-">−</button><span class="label-g"></span></div>
 
-      <button type="button" data-digit="1" class="key key-number">1</button>
-      <button type="button" data-digit="2" class="key key-number">2</button>
-      <button type="button" data-digit="3" class="key key-number">3</button>
-      <button type="button" data-operator="+" class="key key-operator">+</button>
-
-      <button type="button" data-action="backspace" class="key key-function">⌫</button>
-      <button type="button" data-digit="0" class="key key-number">0</button>
-      <button type="button" data-action="decimal" class="key key-number">,</button>
-      <button type="button" data-action="equals" class="key key-equals">=</button>
+      <!-- Linha 4 -->
+      <div class="key-container"><span class="label-f">ON</span><button class="key key-on" data-action="ON">ON</button><span class="label-g"></span></div>
+      <div class="key-container"><span class="label-f">f</span><button class="key key-modifier-f" data-action="prefix_f">f</button><span class="label-g"></span></div>
+      <div class="key-container"><span class="label-f">g</span><button class="key key-modifier-g" data-action="prefix_g">g</button><span class="label-g"></span></div>
+      <div class="key-container"><span class="label-f">STO</span><button class="key" data-action="STO">STO</button><span class="label-g"></span></div>
+      <div class="key-container"><span class="label-f">RCL</span><button class="key" data-action="RCL">RCL</button><span class="label-g"></span></div>
+      <div class="key-container"><span class="label-f">0</span><button class="key" data-digit="0">0</button><span class="label-g">x̄</span></div>
+      <div class="key-container"><span class="label-f">.</span><button class="key" data-action="decimal">.</button><span class="label-g">s</span></div>
+      <div class="key-container"><span class="label-f">Σ+</span><button class="key" data-action="sigma_plus">Σ+</button><span class="label-g">Σ-</span></div>
+      <div class="key-container"><span class="label-f">+</span><button class="key key-operator" data-operator="+">+</button><span class="label-g"></span></div>
     </section>
   </main>
 </body>

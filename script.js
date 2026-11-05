@@ -1,280 +1,129 @@
-// Estado da calculadora
-let currentValue = "0";
-let previousValue = "";
-let operator = null;
-let shouldResetDisplay = false;
+let stack = { X: 0, Y: 0, Z: 0, T: 0 };
+let finReg = { n: 0, i: 0, PV: 0, PMT: 0, FV: 0 };
+let inputBuffer = "";
+let isEntering = false;
+let decimals = 2;
+let prefix = null;
 
 const mainDisplay = document.getElementById("main-display");
-const historyDisplay = document.getElementById("history-display");
+const modifierStatus = document.getElementById("modifier-status");
 const keypad = document.querySelector(".keypad");
-const btnInstall = document.getElementById("btn-install");
-
-function formatDisplay(value) {
-  return String(value).replace(".", ",");
-}
-
-function operatorSymbol(op) {
-  return op === "*" ? "×" : op === "/" ? "÷" : op;
-}
 
 function updateDisplay() {
-  mainDisplay.textContent = formatDisplay(currentValue);
+  modifierStatus.textContent = prefix ? prefix.toUpperCase() : "";
+  mainDisplay.textContent = isEntering ? inputBuffer : Number(stack.X).toFixed(decimals);
+}
 
-  if (operator && previousValue !== "") {
-    historyDisplay.textContent =
-      `${formatDisplay(previousValue)} ${operatorSymbol(operator)}`;
+function pushStack(val) {
+  stack.T = stack.Z;
+  stack.Z = stack.Y;
+  stack.Y = stack.X;
+  stack.X = val;
+}
+
+function popStack() {
+  const x = stack.X;
+  stack.X = stack.Y;
+  stack.Y = stack.Z;
+  stack.Z = stack.T;
+  return x;
+}
+
+function handleDigit(digit) {
+  if (prefix === 'f') {
+    const num = parseInt(digit, 10);
+    if (!isNaN(num)) decimals = num;
+    prefix = null;
+    updateDisplay();
+    return;
+  }
+
+  if (!isEntering) {
+    pushStack(0);
+    inputBuffer = digit;
+    isEntering = true;
   } else {
-    historyDisplay.textContent = "";
+    if (inputBuffer.length < 10) inputBuffer += digit;
   }
-}
-
-function appendDigit(digit) {
-  if (currentValue === "Erro" || currentValue === "0" || shouldResetDisplay) {
-    currentValue = digit;
-    shouldResetDisplay = false;
-  } else if (currentValue.length < 12) {
-    currentValue += digit;
-  }
+  stack.X = parseFloat(inputBuffer);
+  prefix = null;
   updateDisplay();
 }
 
-function appendDecimal() {
-  if (currentValue === "Erro") currentValue = "0";
-
-  if (shouldResetDisplay) {
-    currentValue = "0.";
-    shouldResetDisplay = false;
-  } else if (!currentValue.includes(".")) {
-    currentValue += ".";
+function handleEnter() {
+  if (isEntering) {
+    isEntering = false;
+    inputBuffer = "";
   }
+  pushStack(stack.X);
+  prefix = null;
   updateDisplay();
 }
 
-function clearAll() {
-  currentValue = "0";
-  previousValue = "";
-  operator = null;
-  shouldResetDisplay = false;
-  updateDisplay();
-}
-
-function backspace() {
-  if (shouldResetDisplay || currentValue === "Erro") return;
-
-  if (
-    currentValue.length === 1 ||
-    (currentValue.length === 2 && currentValue.startsWith("-"))
-  ) {
-    currentValue = "0";
-  } else {
-    currentValue = currentValue.slice(0, -1);
+function handleOperation(op) {
+  if (isEntering) {
+    isEntering = false;
+    inputBuffer = "";
   }
-  updateDisplay();
-}
+  const x = popStack();
+  const y = stack.X;
 
-function toggleSign() {
-  if (currentValue === "0" || currentValue === "Erro") return;
-  currentValue = String(Number(currentValue) * -1);
-  updateDisplay();
-}
-
-function percentage() {
-  if (currentValue === "Erro") return;
-  currentValue = String(Number(currentValue) / 100);
-  shouldResetDisplay = true;
-  updateDisplay();
-}
-
-function setOperator(op) {
-  if (currentValue === "Erro") return;
-
-  if (operator && !shouldResetDisplay) {
-    calculate();
+  switch (op) {
+    case "+": stack.X = y + x; break;
+    case "-": stack.X = y - x; break;
+    case "*": stack.X = y * x; break;
+    case "/": stack.X = x !== 0 ? y / x : 0; break;
   }
-
-  previousValue = currentValue;
-  operator = op;
-  shouldResetDisplay = true;
+  prefix = null;
   updateDisplay();
-}
-
-function calculate() {
-  if (!operator || previousValue === "") return;
-
-  const previous = Number(previousValue);
-  const current = Number(currentValue);
-  let result;
-
-  switch (operator) {
-    case "+":
-      result = previous + current;
-      break;
-    case "-":
-      result = previous - current;
-      break;
-    case "*":
-      result = previous * current;
-      break;
-    case "/":
-      if (current === 0) {
-        currentValue = "Erro";
-        operator = null;
-        previousValue = "";
-        shouldResetDisplay = true;
-        updateDisplay();
-        return;
-      }
-      result = previous / current;
-      break;
-    default:
-      return;
-  }
-
-  if (!Number.isFinite(result)) {
-    currentValue = "Erro";
-  } else {
-    // Limita a precisão exibida e evita resíduos comuns de ponto flutuante.
-    result = Math.round((result + Number.EPSILON) * 1e10) / 1e10;
-    currentValue = String(result);
-  }
-
-  historyDisplay.textContent =
-    `${formatDisplay(previousValue)} ${operatorSymbol(operator)} ` +
-    `${formatDisplay(String(current))} =`;
-
-  operator = null;
-  previousValue = "";
-  shouldResetDisplay = true;
-  mainDisplay.textContent = formatDisplay(currentValue);
 }
 
 function handleAction(action) {
+  if (action === "prefix_f") { prefix = prefix === "f" ? null : "f"; updateDisplay(); return; }
+  if (action === "prefix_g") { prefix = prefix === "g" ? null : "g"; updateDisplay(); return; }
+
+  if (["n", "i", "PV", "PMT", "FV"].includes(action)) {
+    if (prefix === "g") {
+      if (action === "n") finReg.n = stack.X * 12;
+      if (action === "i") finReg.i = stack.X / 12;
+    } else {
+      finReg[action] = stack.X;
+    }
+    prefix = null;
+    isEntering = false;
+    updateDisplay();
+    return;
+  }
+
   switch (action) {
-    case "clear":
-      clearAll();
+    case "CHS":
+      stack.X = stack.X * -1;
+      if (isEntering) inputBuffer = String(stack.X);
       break;
-    case "sign":
-      toggleSign();
+    case "CLx":
+      stack.X = 0;
+      inputBuffer = "";
+      isEntering = false;
       break;
-    case "percent":
-      percentage();
+    case "swap":
+      const t = stack.X; stack.X = stack.Y; stack.Y = t;
       break;
-    case "backspace":
-      backspace();
-      break;
-    case "decimal":
-      appendDecimal();
-      break;
-    case "equals":
-      calculate();
+    case "roll_down":
+      const tx = stack.X; stack.X = stack.Y; stack.Y = stack.Z; stack.Z = stack.T; stack.T = tx;
       break;
   }
+
+  prefix = null;
+  updateDisplay();
 }
 
-// Um único listener atende todos os botões do teclado.
-keypad.addEventListener("click", (event) => {
-  const button = event.target.closest("button");
-  if (!button) return;
-
-  if (button.dataset.digit !== undefined) {
-    appendDigit(button.dataset.digit);
-  } else if (button.dataset.operator) {
-    setOperator(button.dataset.operator);
-  } else if (button.dataset.action) {
-    handleAction(button.dataset.action);
-  }
+keypad.addEventListener("click", (e) => {
+  const btn = e.target.closest("button");
+  if (!btn) return;
+  if (btn.dataset.digit !== undefined) handleDigit(btn.dataset.digit);
+  else if (btn.dataset.operator) handleOperation(btn.dataset.operator);
+  else if (btn.dataset.action === "ENTER") handleEnter();
+  else if (btn.dataset.action) handleAction(btn.dataset.action);
 });
-
-// Atalhos do teclado físico.
-document.addEventListener("keydown", (event) => {
-  if (event.target instanceof HTMLInputElement) return;
-
-  if (/^[0-9]$/.test(event.key)) {
-    appendDigit(event.key);
-  } else if (event.key === "." || event.key === ",") {
-    appendDecimal();
-  } else if (["+", "-", "*", "/"].includes(event.key)) {
-    setOperator(event.key);
-  } else if (event.key === "Enter" || event.key === "=") {
-    event.preventDefault();
-    calculate();
-  } else if (event.key === "Backspace") {
-    backspace();
-  } else if (event.key === "Escape" || event.key.toLowerCase() === "c") {
-    clearAll();
-  }
-});
-
-// Instalação PWA.
-let deferredInstallPrompt = null;
-
-window.addEventListener("beforeinstallprompt", (event) => {
-  event.preventDefault();
-  deferredInstallPrompt = event;
-  btnInstall.hidden = false;
-});
-
-btnInstall.addEventListener("click", async () => {
-  if (!deferredInstallPrompt) return;
-
-  deferredInstallPrompt.prompt();
-  await deferredInstallPrompt.userChoice;
-  deferredInstallPrompt = null;
-  btnInstall.hidden = true;
-});
-
-window.addEventListener("appinstalled", () => {
-  btnInstall.hidden = true;
-});
-
-// Temas disponíveis. O tema escolhido fica salvo neste dispositivo.
-const themes = [
-  { id: "classic", label: "Clássico" },
-  { id: "dark", label: "Escuro" },
-  { id: "light", label: "Claro" }
-];
-
-const themeButton = document.getElementById("btn-theme");
-const themeLabel = document.getElementById("theme-label");
-
-function applyTheme(themeId) {
-  const selectedTheme = themes.find((theme) => theme.id === themeId) || themes[0];
-
-  document.documentElement.dataset.theme = selectedTheme.id;
-  themeLabel.textContent = selectedTheme.label;
-  themeButton.setAttribute("aria-label", `Tema atual: ${selectedTheme.label}. Clique para alterar.`);
-  themeButton.title = `Tema atual: ${selectedTheme.label}. Clique para alterar.`;
-
-  try {
-    localStorage.setItem("calculadora-theme", selectedTheme.id);
-  } catch (error) {
-    // A calculadora continua funcionando mesmo se o armazenamento estiver bloqueado.
-  }
-}
-
-function cycleTheme() {
-  const currentTheme = document.documentElement.dataset.theme || "classic";
-  const currentIndex = themes.findIndex((theme) => theme.id === currentTheme);
-  const nextTheme = themes[(currentIndex + 1) % themes.length];
-  applyTheme(nextTheme.id);
-}
-
-themeButton.addEventListener("click", cycleTheme);
-
-let savedTheme = "classic";
-try {
-  savedTheme = localStorage.getItem("calculadora-theme") || "classic";
-} catch (error) {
-  // Usa o tema clássico quando o armazenamento não estiver disponível.
-}
-applyTheme(savedTheme);
 
 updateDisplay();
-
-// Registro do Service Worker externo.
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./service-worker.js")
-      .catch((error) => console.error("Falha ao registrar o Service Worker:", error));
-  });
-}

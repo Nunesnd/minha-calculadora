@@ -3,265 +3,148 @@
 }
 
 :root {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  color-scheme: dark;
-  --page-bg: #171717;
-  --calculator-bg: #252525;
-  --calculator-border: #3b3b3b;
-  --display-bg: #101510;
-  --display-border: #454b3b;
-  --display-text: #d9e3b0;
-  --history-text: #9ba77b;
-  --key-function-bg: #44443b;
-  --key-function-text: #f1e8c8;
-  --key-number-bg: #30352a;
-  --key-number-text: #f4f0dc;
-  --key-operator-bg: #a88a43;
-  --key-operator-text: #171717;
-  --key-equals-bg: #687b43;
-  --key-equals-text: #ffffff;
-  --muted-text: #c5bd9d;
-  --accent: #c5a65a;
-  --install-bg: #8b7138;
-  --install-hover: #a88a43;
-  background: var(--page-bg);
-  color: var(--key-number-text);
-}
-
-:root[data-theme="dark"] {
+  font-family: system-ui, -apple-system, sans-serif;
   color-scheme: dark;
   --page-bg: #0f172a;
-  --calculator-bg: #0f172a;
-  --calculator-border: #1e293b;
-  --display-bg: #020617;
-  --display-border: #1e293b;
-  --display-text: #f8fafc;
-  --history-text: #64748b;
-  --key-function-bg: #1e293b;
-  --key-function-text: #cbd5e1;
-  --key-number-bg: #1e293b;
-  --key-number-text: #f8fafc;
-  --key-operator-bg: #2563eb;
-  --key-operator-text: #ffffff;
-  --key-equals-bg: #059669;
-  --key-equals-text: #ffffff;
-  --muted-text: #94a3b8;
-  --accent: #93c5fd;
-  --install-bg: #2563eb;
-  --install-hover: #3b82f6;
-}
-
-:root[data-theme="light"] {
-  color-scheme: light;
-  --page-bg: #e9edf2;
-  --calculator-bg: #ffffff;
-  --calculator-border: #d7dee8;
-  --display-bg: #f3f6f8;
-  --display-border: #d7dee8;
-  --display-text: #172033;
-  --history-text: #64748b;
-  --key-function-bg: #e2e8f0;
-  --key-function-text: #334155;
-  --key-number-bg: #f1f5f9;
-  --key-number-text: #172033;
-  --key-operator-bg: #2563eb;
-  --key-operator-text: #ffffff;
-  --key-equals-bg: #059669;
-  --key-equals-text: #ffffff;
-  --muted-text: #64748b;
-  --accent: #2563eb;
-  --install-bg: #2563eb;
-  --install-hover: #1d4ed8;
+  --calc-bg: #1e293b;
+  --border-color: #334155;
+  --display-bg: #9ea884;
+  --display-text: #141f0d;
+  --btn-default-bg: #334155;
+  --btn-default-text: #f8fafc;
+  --btn-gold-bg: #d97706;
+  --btn-blue-bg: #2563eb;
+  --btn-enter-bg: #475569;
+  --label-gold: #fbbf24;
+  --label-blue: #60a5fa;
 }
 
 body {
   min-height: 100vh;
-  min-height: 100dvh;
   margin: 0;
-  padding: 16px;
+  padding: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: var(--page-bg);
-  color: var(--key-number-text);
+  color: #fff;
   user-select: none;
-  -webkit-user-select: none;
-  touch-action: manipulation;
-  transition: background-color 180ms ease, color 180ms ease;
 }
 
-.calculator {
+.hp-calculator {
   width: 100%;
-  max-width: 380px;
+  max-width: 900px;
   padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  background: var(--calculator-bg);
-  border: 1px solid var(--calculator-border);
-  border-radius: 26px;
-  box-shadow: 0 24px 60px rgb(0 0 0 / 25%);
-  transition: background-color 180ms ease, border-color 180ms ease;
+  background: var(--calc-bg);
+  border: 2px solid var(--border-color);
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
 }
 
 .top-bar {
-  min-height: 28px;
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  color: var(--muted-text);
+  align-items: center;
+}
+
+.brand-title {
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+.theme-button, .install-button {
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  padding: 6px 12px;
+  background: #334155;
+  color: #fff;
+  cursor: pointer;
   font-size: 12px;
 }
 
-.theme-button,
-.install-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  border: 1px solid var(--calculator-border);
-  border-radius: 999px;
-  padding: 7px 11px;
-  color: var(--key-function-text);
-  background: var(--key-function-bg);
-  font-size: 11px;
-  font-weight: 650;
-  cursor: pointer;
-}
-
-.theme-button {
-  min-height: 30px;
-}
-
-.theme-button span:first-child {
-  font-size: 15px;
-}
-
-.install-button {
-  border: 0;
-  color: #fff;
-  background: var(--install-bg);
-}
-
-.install-button:hover {
-  background: var(--install-hover);
-}
-
-.install-button[hidden] {
-  display: none;
-}
-
-.theme-button:focus-visible,
-.install-button:focus-visible,
-.key:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 3px;
-}
-
-.display {
-  min-width: 0;
-  padding: 15px;
-  overflow: hidden;
-  text-align: right;
+.lcd-display {
   background: var(--display-bg);
-  border: 1px solid var(--display-border);
-  border-radius: 17px;
-  box-shadow: inset 0 2px 8px rgb(0 0 0 / 18%);
-  transition: background-color 180ms ease, border-color 180ms ease;
+  border: 3px solid #475569;
+  border-radius: 8px;
+  padding: 10px 16px;
+  text-align: right;
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.3);
 }
 
-.history-display {
-  height: 22px;
-  overflow: hidden;
-  color: var(--history-text);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 13px;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+.status-bar {
+  height: 16px;
+  font-size: 12px;
+  font-weight: bold;
+  color: #334155;
+  font-family: monospace;
 }
 
 .main-display {
-  padding: 4px 0;
-  overflow: hidden;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 38px;
+  font-weight: 700;
   color: var(--display-text);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: clamp(36px, 11vw, 48px);
-  font-weight: 600;
-  letter-spacing: -2px;
-  white-space: nowrap;
-  text-overflow: clip;
+  letter-spacing: 2px;
 }
 
 .keypad {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 8px 6px;
+}
+
+.key-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.label-f {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--label-gold);
+  height: 12px;
+}
+
+.label-g {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--label-blue);
+  height: 12px;
 }
 
 .key {
-  min-width: 0;
-  min-height: 62px;
-  padding: 10px 4px;
+  width: 100%;
+  height: 44px;
   border: 0;
-  border-radius: 15px;
-  color: var(--key-number-text);
-  font: inherit;
-  font-size: 20px;
+  border-radius: 6px;
+  background: var(--btn-default-bg);
+  color: var(--btn-default-text);
+  font-size: 13px;
+  font-weight: 700;
   cursor: pointer;
-  transition: transform 100ms ease, filter 100ms ease, opacity 100ms ease, background-color 180ms ease;
-  -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 3px 0 #0f172a;
 }
 
 .key:active {
-  transform: scale(.95);
-  filter: brightness(1.12);
-  opacity: .88;
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #0f172a;
 }
 
-.key-function {
-  color: var(--key-function-text);
-  background: var(--key-function-bg);
-}
+.key-modifier-f { background: var(--btn-gold-bg); color: #fff; }
+.key-modifier-g { background: var(--btn-blue-bg); color: #fff; }
+.key-enter { background: var(--btn-enter-bg); }
+.key-gold-top { border-top: 3px solid var(--btn-gold-bg); }
 
-.key-clear {
-  color: #e87979;
-  font-weight: 700;
-}
-
-.key-number {
-  background: var(--key-number-bg);
-}
-
-.key-operator {
-  color: var(--key-operator-text);
-  background: var(--key-operator-bg);
-  font-size: 24px;
-  font-weight: 700;
-}
-
-.key-equals {
-  color: var(--key-equals-text);
-  background: var(--key-equals-bg);
-  font-size: 24px;
-  font-weight: 700;
-}
-
-@media (max-height: 600px) {
-  body {
-    align-items: flex-start;
-  }
-
-  .calculator {
-    gap: 10px;
-    padding: 14px;
-  }
-
+@media (max-width: 680px) {
   .keypad {
-    gap: 7px;
-  }
-
-  .key {
-    min-height: 48px;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px 6px;
   }
 }
