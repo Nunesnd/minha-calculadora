@@ -1,4 +1,4 @@
-const CACHE_NAME = "calculadora-cache-v4";
+const CACHE_NAME = "calculadora-cache-v5";
 const APP_FILES = [
   "./",
   "./index.html",
@@ -14,20 +14,16 @@ self.addEventListener("install", (event) => {
 
   // Força o Service Worker novo a virar o ativo imediatamente sem esperar fechar a aba
   self.skipWaiting();
-  
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_FILES))
-  );
 
-  /*event.waitUntil(
+  event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => cache.addAll(APP_FILES))
       .then(() => self.skipWaiting())
-  );*/
+  );
 });
 
 self.addEventListener("activate", (event) => {
-/*
+
   event.waitUntil(
     caches.keys()
       .then((cacheNames) =>
@@ -39,34 +35,12 @@ self.addEventListener("activate", (event) => {
       )
       .then(() => self.clients.claim())
   );
-  */
-
-  event.waitUntil(
-    // Deleta caches antigos de versões anteriores
-    caches.keys().then((keys) =>
-      Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
-          }
-        })
-      )
-    ).then(() => self.clients.claim()) // Assume o controle da aba atual imediatamente
-  );
 
 });
 
 self.addEventListener("fetch", (event) => {
 
 if (event.request.method !== "GET") return;
-
-  event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
-    })
-  );
-/*
-  if (event.request.method !== "GET") return;
 
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
@@ -93,5 +67,4 @@ if (event.request.method !== "GET") return;
     })
   );
 
-  */
 });
