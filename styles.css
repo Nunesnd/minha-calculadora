@@ -148,3 +148,42 @@ body {
     gap: 10px 6px;
   }
 }
+
+/* Faz o contêiner do ENTER ocupar a altura de 2 linhas no grid */
+.key-container-enter {
+  grid-row: span 2;
+  justify-content: flex-start; /* Alinha o conteúdo ao topo */
+}
+
+.key-enter {
+  background: var(--btn-enter-bg);
+  width: 100%;
+  
+  /* 
+    Calcula a altura ideal: 2 teclas (44px * 2 = 88px) + o espaçamento vertical entre linhas (8px)
+    + o espaço extra das duas labels das linhas que ele atravessa (~24px)
+  */
+  height: calc(88px + 8px + 24px); 
+  max-height: 120px; /* Trava a altura máxima para não esticar em monitores gigantes */
+  
+  writing-mode: vertical-lr;
+  text-orientation: upright;
+  letter-spacing: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 12px; /* Alinha o topo do botão com as teclas ao lado */
+}
+
+/* No mobile mantemos simples */
+@media (max-width: 680px) {
+  .key-container-enter {
+    grid-row: span 1;
+  }
+  .key-enter {
+    writing-mode: horizontal-tb;
+    height: 44px;
+    max-height: 44px;
+    margin-top: 0;
+  }
+}

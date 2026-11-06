@@ -55,19 +55,26 @@
       <div class="key-container"><span class="label-f">6</span><button class="key" data-digit="6">6</button><span class="label-g"></span></div>
       <div class="key-container"><span class="label-f">×</span><button class="key key-operator" data-operator="*">×</button><span class="label-g"></span></div>
 
-      <!-- Linha 3 -->
+<!-- Linha 3 -->
       <div class="key-container"><span class="label-f">R/S</span><button class="key" data-action="RS">R/S</button><span class="label-g">P/R</span></div>
       <div class="key-container"><span class="label-f">SST</span><button class="key" data-action="SST">SST</button><span class="label-g">BST</span></div>
       <div class="key-container"><span class="label-f">R↓</span><button class="key" data-action="roll_down">R↓</button><span class="label-g">GTO</span></div>
       <div class="key-container"><span class="label-f">x≷y</span><button class="key" data-action="swap">x≷y</button><span class="label-g">x=0</span></div>
       <div class="key-container"><span class="label-f">CLx</span><button class="key" data-action="CLx">CLx</button><span class="label-g">x≤y</span></div>
-      <div class="key-container"><span class="label-f">ENTER</span><button class="key key-enter" data-action="ENTER">ENTER</button><span class="label-g">LSTx</span></div>
+      
+      <!-- ENTER ocupa o espaço da linha 3 e linha 4 -->
+      <div class="key-container key-container-enter">
+        <span class="label-f">ENTER</span>
+        <button class="key key-enter" data-action="ENTER">ENTER</button>
+        <span class="label-g">LSTx</span>
+      </div>
+
       <div class="key-container"><span class="label-f">1</span><button class="key" data-digit="1">1</button><span class="label-g">x̂,r</span></div>
-      <div class="key-container"><span class="label-f">2</span><button class="key" data-digit="2">2</button><span class="label-g">ŷ,r</span></div>
+      <div class="key-container"><span class="label-f">2</span><button class="key" data-digit="2">2</button><span class="label-g">ŷ,r</span></div>
       <div class="key-container"><span class="label-f">3</span><button class="key" data-digit="3">3</button><span class="label-g">n!</span></div>
       <div class="key-container"><span class="label-f">−</span><button class="key key-operator" data-operator="-">−</button><span class="label-g"></span></div>
 
-      <!-- Linha 4 -->
+      <!-- Linha 4 (removido o contêiner repetido do ENTER que ficava abaixo) -->
       <div class="key-container"><span class="label-f">ON</span><button class="key key-on" data-action="ON">ON</button><span class="label-g"></span></div>
       <div class="key-container"><span class="label-f">f</span><button class="key key-modifier-f" data-action="prefix_f">f</button><span class="label-g"></span></div>
       <div class="key-container"><span class="label-f">g</span><button class="key key-modifier-g" data-action="prefix_g">g</button><span class="label-g"></span></div>
