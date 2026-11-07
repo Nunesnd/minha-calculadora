@@ -9,9 +9,22 @@ const mainDisplay = document.getElementById("main-display");
 const modifierStatus = document.getElementById("modifier-status");
 const keypad = document.querySelector(".keypad");
 
+// Função centralizada para atualizar as classes de LED no body
+function updateLedStatus() {
+  document.body.classList.remove("mode-f-active", "mode-g-active");
+  if (prefix === "f") {
+    document.body.classList.add("mode-f-active");
+  } else if (prefix === "g") {
+    document.body.classList.add("mode-g-active");
+  }
+}
+
 function updateDisplay() {
   modifierStatus.textContent = prefix ? prefix.toUpperCase() : "";
   mainDisplay.textContent = isEntering ? inputBuffer : Number(stack.X).toFixed(decimals);
+  
+  // Atualiza os LEDs sempre que o visor/prefixo mudar
+  updateLedStatus();
 }
 
 function pushStack(val) {
@@ -79,8 +92,16 @@ function handleOperation(op) {
 }
 
 function handleAction(action) {
-  if (action === "prefix_f") { prefix = prefix === "f" ? null : "f"; updateDisplay(); return; }
-  if (action === "prefix_g") { prefix = prefix === "g" ? null : "g"; updateDisplay(); return; }
+  if (action === "prefix_f") { 
+    prefix = prefix === "f" ? null : "f"; 
+    updateDisplay(); 
+    return; 
+  }
+  if (action === "prefix_g") { 
+    prefix = prefix === "g" ? null : "g"; 
+    updateDisplay(); 
+    return; 
+  }
 
   if (["n", "i", "PV", "PMT", "FV"].includes(action)) {
     if (prefix === "g") {

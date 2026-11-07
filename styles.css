@@ -95,7 +95,7 @@ body {
 .keypad {
   display: grid;
   grid-template-columns: repeat(10, 1fr);
-  gap: 8px 6px;
+  gap: 14px 6px;
 }
 
 .key-container {
@@ -107,6 +107,13 @@ body {
 
 .label-f {
   font-size: 10px;
+  font-weight: 700;
+  color: var(--label-gold);
+  height: 12px;
+}
+
+.label-f-titulo{
+  font-size: 8px;
   font-weight: 700;
   color: var(--label-gold);
   height: 12px;
@@ -193,10 +200,52 @@ body {
 .key-enter { background: var(--btn-enter-bg); }
 .key-gold-top { border-top: 3px solid var(--btn-gold-bg); }
 
+
+/* Transições suaves para os rótulos e sub-chanfros acenderem */
+.label-f, .key-sub, .key-enter-sub {
+  transition: all 0.25s ease-in-out;
+}
+
+/* ========================================================
+   EFEITO BACKLIGHT: TECLA 'f' ATIVADA (Dourado/Amarelo)
+   ======================================================== */
+
+/* Acende o texto do rótulo dourado superior */
+body.mode-f-active .label-f {
+  color: #ffe066;
+  text-shadow: 0 0 6px rgba(251, 191, 36, 0.9), 
+               0 0 12px rgba(251, 191, 36, 0.6);
+}
+
+/* Faz o botão 'f' brilhar em 3D */
+body.mode-f-active .key-modifier-f {
+  box-shadow: 0 0 12px rgba(217, 119, 6, 0.9), 
+              0 3px 0 #0f172a;
+}
+
+/* ========================================================
+   EFEITO BACKLIGHT: TECLA 'g' ATIVADA (Azul)
+   ======================================================== */
+
+/* Acende o texto azul do rodapé chanfrado das teclas */
+body.mode-g-active .key-sub,
+body.mode-g-active .key-enter-sub {
+  color: #93c5fd;
+  text-shadow: 0 0 6px rgba(96, 165, 250, 0.9), 
+               0 0 12px rgba(96, 165, 250, 0.6);
+  border-top-color: rgba(96, 165, 250, 0.5);
+}
+
+/* Faz o botão 'g' brilhar em 3D */
+body.mode-g-active .key-modifier-g {
+  box-shadow: 0 0 12px rgba(37, 99, 235, 0.9), 
+              0 3px 0 #0f172a;
+}
+
 @media (max-width: 680px) {
   .keypad {
     grid-template-columns: repeat(5, 1fr);
-    gap: 10px 6px;
+    gap: 14px 6px;
   }
 }
 
