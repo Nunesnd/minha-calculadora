@@ -120,22 +120,63 @@ body {
 }
 
 .key {
-width: 100%;
-  height: 56px; /* Altura fixa de 56px para a largura base de 80px */
-  /* Se quiser que a altura mude dinamicamente junto com a largura: aspect-ratio: 8 / 5.6; */
+  width: 100%;
+  height: 56px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 4px;
   background: var(--btn-default-bg);
   color: var(--btn-default-text);
-  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
+  padding: 0;
+  overflow: hidden; /* Mantém o rodapé dentro dos cantos arredondados */
+  display: flex;
+  flex-direction: column;
   box-shadow: 0 3px 0 #0f172a;
 }
 
 .key:active {
   transform: translateY(2px);
   box-shadow: 0 1px 0 #0f172a;
+}
+
+/* Parte Superior do Botão (70% da altura) */
+.key-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: #fff;
+}
+
+/* Rodapé Chanfrado (30% da altura) */
+.key-sub {
+  height: 30%;
+  background: rgba(0, 0, 0, 0.45); /* Cor mais escura para simular a inclinação 3D */
+  color: var(--label-blue);
+  font-size: 9px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-top: 1px solid rgba(0, 0, 0, 0.6); /* Linha sutil de sombra na dobra */
+  box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.4); /* Efeito visual de profundidade */
+}
+
+.key-enter-sub {
+  height: 16.8px; /* Mesma altura de chanfro das outras teclas */
+  width: 100%;
+  background: rgba(0, 0, 0, 0.45);
+  color: var(--label-blue);
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-top: 1px solid rgba(0, 0, 0, 0.6);
+  box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.4);
+  writing-mode: horizontal-tb; /* Garante que o = fique reto na horizontal */
 }
 
 .key-modifier-f { background: var(--btn-gold-bg); color: #fff; }
@@ -159,20 +200,23 @@ width: 100%;
 .key-enter {
   background: var(--btn-enter-bg);
   width: 100%;
-  
-  /* 
-    Calcula a altura ideal: 2 teclas (44px * 2 = 88px) + o espaçamento vertical entre linhas (8px)
-    + o espaço extra das duas labels das linhas que ele atravessa (~24px)
-  */
-  height: calc(88px + 33px + 24px); 
-  max-height: 220px; /* Trava a altura máxima para não esticar em monitores gigantes */
-  
-  writing-mode: vertical-lr;
-  text-orientation: upright;
-  letter-spacing: 2px;
+  height: calc(112px + 20px); /* 2 teclas de 56px + gap entre as linhas */
+  max-height: 220px;
+  display: flex;
+  flex-direction: column; /* Garante topo para ENTER e base para o = */
+  padding: 0;
+  overflow: hidden;
+}
+
+.key-enter .key-main {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
+  writing-mode: vertical-lr; /* Aplica a orientação vertical SOMENTE aqui */
+  text-orientation: upright;
+  letter-spacing: 2px;
+  font-size: 11px;
 }
 
 /* No mobile mantemos simples */
@@ -181,9 +225,8 @@ width: 100%;
     grid-row: span 1;
   }
   .key-enter {
-    writing-mode: horizontal-tb;
-    height: 44px;
-    max-height: 44px;
-    margin-top: 0;
+    height: 56px;
   }
+  .key-enter .key-main {
+    writing-mode: horizontal-tb; /* Volta para a horizontal no mobile */
 }
