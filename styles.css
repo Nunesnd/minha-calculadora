@@ -120,8 +120,9 @@ body {
 }
 
 .key {
-  width: 100%;
-  height: 44px;
+width: 100%;
+  height: 56px; /* Altura fixa de 56px para a largura base de 80px */
+  /* Se quiser que a altura mude dinamicamente junto com a largura: aspect-ratio: 8 / 5.6; */
   border: 0;
   border-radius: 6px;
   background: var(--btn-default-bg);
@@ -163,8 +164,8 @@ body {
     Calcula a altura ideal: 2 teclas (44px * 2 = 88px) + o espaçamento vertical entre linhas (8px)
     + o espaço extra das duas labels das linhas que ele atravessa (~24px)
   */
-  height: calc(88px + 8px + 24px); 
-  max-height: 120px; /* Trava a altura máxima para não esticar em monitores gigantes */
+  height: calc(88px + 33px + 24px); 
+  max-height: 220px; /* Trava a altura máxima para não esticar em monitores gigantes */
   
   writing-mode: vertical-lr;
   text-orientation: upright;
@@ -172,7 +173,6 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-top: 12px; /* Alinha o topo do botão com as teclas ao lado */
 }
 
 /* No mobile mantemos simples */
