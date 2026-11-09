@@ -18,9 +18,32 @@ function updateLedStatus() {
   }
 }
 
+function formatHPNumber(num, decCount) {
+  const parsed = Number(num);
+  if (isNaN(parsed)) return "0.00";
+  
+  const parts = parsed.toFixed(decCount).split(".");
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return parts.join(".");
+}
+
 function updateDisplay() {
-  modifierStatus.textContent = prefix ? prefix.toUpperCase() : "";
-  mainDisplay.textContent = isEntering ? inputBuffer : Number(stack.X).toFixed(decimals);
+modifierStatus.textContent = prefix ? prefix.toUpperCase() : "";
+
+  if (isEntering) {
+    // Se o usuário está digitando, formatamos a parte inteira do buffer sem perder o ponto que ele pode estar colocando
+    const hasDecimal = inputBuffer.includes(".");
+    const parts = inputBuffer.split(".");
+    
+    // Formata milhar apenas na parte inteira já digitada
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    
+    mainDisplay.textContent = hasDecimal ? parts.join(".") : parts[0];
+  } else {
+    // Quando exibe o resultado da pilha (após +, -, *, /, ENTER), usa a formatação completa da pilha X
+    mainDisplay.textContent = formatHPNumber(stack.X, decimals);
+  }
+  
   updateLedStatus();
 }
 
@@ -40,7 +63,7 @@ function popStack() {
 }
 
 function handleDigit(digit) {
-  if (prefix === 'f') {
+if (prefix === 'f') {
     const num = parseInt(digit, 10);
     if (!isNaN(num)) decimals = num;
     prefix = null;
@@ -55,7 +78,8 @@ function handleDigit(digit) {
   } else {
     if (inputBuffer.length < 10) inputBuffer += digit;
   }
-  stack.X = parseFloat(inputBuffer);
+  
+  stack.X = parseFloat(inputBuffer) || 0;
   prefix = null;
   updateDisplay();
 }
@@ -94,19 +118,25 @@ function handleEnter() {
 }
 
 function handleOperation(op) {
+// 1. Se o usuário estava digitando um número, confirma a entrada no registrador X
   if (isEntering) {
+    stack.X = parseFloat(inputBuffer) || 0;
     isEntering = false;
     inputBuffer = "";
   }
+
+  // 2. Retira o valor do topo (X) e o valor anterior (Y) para calcular
   const x = popStack();
   const y = stack.X;
 
+  // 3. Realiza a operação matemática
   switch (op) {
     case "+": stack.X = y + x; break;
     case "-": stack.X = y - x; break;
     case "*": stack.X = y * x; break;
     case "/": stack.X = x !== 0 ? y / x : 0; break;
   }
+
   prefix = null;
   updateDisplay();
 }
