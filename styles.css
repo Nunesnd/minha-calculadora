@@ -287,4 +287,5 @@ body.mode-g-active .key-modifier-g {
   }
   .key-enter .key-main {
     writing-mode: horizontal-tb; /* Volta para a horizontal no mobile */
+  }
 }

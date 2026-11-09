@@ -9,7 +9,6 @@ const mainDisplay = document.getElementById("main-display");
 const modifierStatus = document.getElementById("modifier-status");
 const keypad = document.querySelector(".keypad");
 
-// Função centralizada para atualizar as classes de LED no body
 function updateLedStatus() {
   document.body.classList.remove("mode-f-active", "mode-g-active");
   if (prefix === "f") {
@@ -22,8 +21,6 @@ function updateLedStatus() {
 function updateDisplay() {
   modifierStatus.textContent = prefix ? prefix.toUpperCase() : "";
   mainDisplay.textContent = isEntering ? inputBuffer : Number(stack.X).toFixed(decimals);
-  
-  // Atualiza os LEDs sempre que o visor/prefixo mudar
   updateLedStatus();
 }
 
@@ -59,6 +56,29 @@ function handleDigit(digit) {
     if (inputBuffer.length < 10) inputBuffer += digit;
   }
   stack.X = parseFloat(inputBuffer);
+  prefix = null;
+  updateDisplay();
+}
+
+function handleDecimal() {
+  if (prefix === 'f') {
+    prefix = null;
+    updateDisplay();
+    return;
+  }
+
+  if (!isEntering) {
+    pushStack(0);
+    inputBuffer = "0.";
+    isEntering = true;
+  } else {
+    // Permite apenas um ponto decimal no buffer de entrada
+    if (!inputBuffer.includes(".")) {
+      inputBuffer += ".";
+    }
+  }
+  
+  stack.X = parseFloat(inputBuffer) || 0;
   prefix = null;
   updateDisplay();
 }
@@ -101,6 +121,11 @@ function handleAction(action) {
     prefix = prefix === "g" ? null : "g"; 
     updateDisplay(); 
     return; 
+  }
+
+  if (action === "decimal") {
+    handleDecimal();
+    return;
   }
 
   if (["n", "i", "PV", "PMT", "FV"].includes(action)) {
