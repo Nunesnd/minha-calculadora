@@ -258,7 +258,7 @@ body.mode-g-active .key-modifier-g {
 .key-enter {
   background: var(--btn-enter-bg);
   width: 100%;
-  height: calc(112px + 20px); /* 2 teclas de 56px + gap entre as linhas */
+  height: calc(118px + 20px); /* 2 teclas de 56px + gap entre as linhas */
   max-height: 220px;
   display: flex;
   flex-direction: column; /* Garante topo para ENTER e base para o = */
