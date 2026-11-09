@@ -29,6 +29,7 @@ body {
   background: var(--page-bg);
   color: #fff;
   user-select: none;
+  touch-action: manipulation;
 }
 
 .hp-calculator {
@@ -140,6 +141,8 @@ body {
   display: flex;
   flex-direction: column;
   box-shadow: 0 3px 0 #0f172a;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .key:active {
