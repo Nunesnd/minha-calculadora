@@ -172,6 +172,16 @@ function handleAction(action) {
   }
 
   switch (action) {
+    case "percent":
+      // 1. Finaliza a digitação atual do percentual
+      if (isEntering) {
+        stack.X = parseFloat(inputBuffer) || 0;
+        isEntering = false;
+        inputBuffer = "";
+      }
+      // 2. Calcula X% de Y sem remover Y da pilha
+      stack.X = (stack.Y * stack.X) / 100;
+      break;
     case "CHS":
       stack.X = stack.X * -1;
       if (isEntering) inputBuffer = String(stack.X);
