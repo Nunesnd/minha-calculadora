@@ -182,18 +182,43 @@ function handleAction(action) {
       // 2. Calcula X% de Y sem remover Y da pilha
       stack.X = (stack.Y * stack.X) / 100;
       break;
+
+    case "pct_delta":
+      // 1. Confirma a digitação do novo valor em X
+      if (isEntering) {
+        stack.X = parseFloat(inputBuffer) || 0;
+        isEntering = false;
+        inputBuffer = "";
+      }
+      // 2. Evita divisão por zero caso a base Y seja 0
+      if (stack.Y === 0) {
+        stack.X = 0;
+      } else {
+        // 3. Calcula a variação percentual mantendo Y intacto
+        stack.X = ((stack.X - stack.Y) / stack.Y) * 100;
+      }
+      break;
+
     case "CHS":
       stack.X = stack.X * -1;
       if (isEntering) inputBuffer = String(stack.X);
       break;
+
+    case "CHS":
+      stack.X = stack.X * -1;
+      if (isEntering) inputBuffer = String(stack.X);
+      break;
+      
     case "CLx":
       stack.X = 0;
       inputBuffer = "";
       isEntering = false;
       break;
+
     case "swap":
       const t = stack.X; stack.X = stack.Y; stack.Y = t;
       break;
+
     case "roll_down":
       const tx = stack.X; stack.X = stack.Y; stack.Y = stack.Z; stack.Z = stack.T; stack.T = tx;
       break;
