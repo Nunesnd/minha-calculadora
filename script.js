@@ -173,33 +173,50 @@ function handleAction(action) {
 
   switch (action) {
     case "percent":
-      // 1. Finaliza a digitação atual do percentual
+      // Funcionamento da tecla %
       if (isEntering) {
         stack.X = parseFloat(inputBuffer) || 0;
         isEntering = false;
         inputBuffer = "";
       }
-      // 2. Calcula X% de Y sem remover Y da pilha
+      
       stack.X = (stack.Y * stack.X) / 100;
       break;
 
     case "pct_delta":
-      // 1. Confirma a digitação do novo valor em X
+      // Funcionamento da tecla Δ%
       if (isEntering) {
         stack.X = parseFloat(inputBuffer) || 0;
         isEntering = false;
         inputBuffer = "";
       }
-      // 2. Evita divisão por zero caso a base Y seja 0
+      // Evita divisão por zero caso a base Y seja 0
       if (stack.Y === 0) {
         stack.X = 0;
       } else {
-        // 3. Calcula a variação percentual mantendo Y intacto
+      // Calcula a variação percentual mantendo Y intacto
         stack.X = ((stack.X - stack.Y) / stack.Y) * 100;
       }
       break;
 
+    case "pct_total":
+      // Funcionamento da tecla %T
+      if (isEntering) {
+        stack.X = parseFloat(inputBuffer) || 0;
+        isEntering = false;
+        inputBuffer = "";
+      }
+      // Evita divisão por zero caso o total (Y) seja 0
+      if (stack.Y === 0) {
+        stack.X = 0;
+      } else {
+        // Calcula quanto X representa de Y, mantendo Y intacto
+        stack.X = (stack.X / stack.Y) * 100;
+      }
+      break;
+
     case "CHS":
+      //Inverte o sinal do número
       stack.X = stack.X * -1;
       if (isEntering) inputBuffer = String(stack.X);
       break;
@@ -208,7 +225,7 @@ function handleAction(action) {
       stack.X = stack.X * -1;
       if (isEntering) inputBuffer = String(stack.X);
       break;
-      
+
     case "CLx":
       stack.X = 0;
       inputBuffer = "";
