@@ -4,6 +4,7 @@ let inputBuffer = "";
 let isEntering = false;
 let decimals = 2;
 let prefix = null;
+let stackLiftEnabled = true;
 
 const mainDisplay = document.getElementById("main-display");
 const modifierStatus = document.getElementById("modifier-status");
@@ -43,7 +44,7 @@ modifierStatus.textContent = prefix ? prefix.toUpperCase() : "";
     // Quando exibe o resultado da pilha (após +, -, *, /, ENTER), usa a formatação completa da pilha X
     mainDisplay.textContent = formatHPNumber(stack.X, decimals);
   }
-  
+  debugStack();
   updateLedStatus();
 }
 
@@ -63,7 +64,8 @@ function popStack() {
 }
 
 function handleDigit(digit) {
-if (prefix === 'f') {
+
+  if (prefix === 'f') {
     const num = parseInt(digit, 10);
     if (!isNaN(num)) decimals = num;
     prefix = null;
@@ -72,13 +74,23 @@ if (prefix === 'f') {
   }
 
   if (!isEntering) {
-    pushStack(0);
+
+    // Só desloca a pilha se a elevação estiver habilitada
+    if (stackLiftEnabled) {
+      pushStack(0);
+    }
+
     inputBuffer = digit;
     isEntering = true;
+
+    // Após começar a digitação, a próxima entrada
+    // deverá respeitar a elevação normal da pilha
+    stackLiftEnabled = true;
+
   } else {
     if (inputBuffer.length < 10) inputBuffer += digit;
   }
-  
+
   stack.X = parseFloat(inputBuffer) || 0;
   prefix = null;
   updateDisplay();
@@ -108,11 +120,17 @@ function handleDecimal() {
 }
 
 function handleEnter() {
+
   if (isEntering) {
     isEntering = false;
     inputBuffer = "";
   }
+
   pushStack(stack.X);
+
+  // ENTER desabilita a elevação automática
+  stackLiftEnabled = false;
+
   prefix = null;
   updateDisplay();
 }
@@ -137,8 +155,30 @@ function handleOperation(op) {
     case "/": stack.X = x !== 0 ? y / x : 0; break;
   }
 
+  stackLiftEnabled = true;
+
   prefix = null;
   updateDisplay();
+}
+
+function debugStack() {
+  console.clear();
+
+  console.log("=== HP-12C | ESTADO DA PILHA ===");
+
+  console.table([
+    { Registrador: "T", Valor: stack.T },
+    { Registrador: "Z", Valor: stack.Z },
+    { Registrador: "Y", Valor: stack.Y },
+    { Registrador: "X", Valor: stack.X }
+  ]);
+
+  console.log({
+    Entrada: inputBuffer,
+    Digitando: isEntering,
+    ElevacaoDaPilha: stackLiftEnabled,
+    Prefixo: prefix
+  });
 }
 
 function handleAction(action) {
@@ -172,6 +212,45 @@ function handleAction(action) {
   }
 
   switch (action) {
+
+    case "power": {
+      // Confirma a entrada do número
+      if (isEntering) {
+        stack.X = parseFloat(inputBuffer) || 0;
+        isEntering = false;
+        inputBuffer = "";
+      }
+
+      // Recupera os dois operandos antes de alterar a pilha
+      const exponent = stack.X;
+      const base = stack.Y;
+
+      // Verifica condições matemáticas inválidas
+      if (
+        (base === 0 && exponent <= 0) ||
+        (base < 0 && !Number.isInteger(exponent))
+      ) {
+        mainDisplay.textContent = "Error 0";
+        prefix = null;
+        return;
+      }
+
+      // Calcula a potência
+      const result = Math.pow(base, exponent);
+
+      // Armazena o resultado em X
+      stack.X = result;
+
+      // Desce a pilha
+      stack.Y = stack.Z;
+      stack.Z = stack.T;
+
+      stackLiftEnabled = true;
+
+      prefix = null;
+      break;
+    }
+    
     case "percent":
       // Funcionamento da tecla %
       if (isEntering) {
