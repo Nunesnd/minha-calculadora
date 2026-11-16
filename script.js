@@ -213,6 +213,27 @@ function handleAction(action) {
 
   switch (action) {
 
+    case "reciprocal": {
+          // 1. Confirma a digitação atual em X, se o usuário estiver digitando
+          if (isEntering) {
+            stack.X = parseFloat(inputBuffer) || 0;
+            isEntering = false;
+            inputBuffer = "";
+          }
+
+          // 2. Regra da HP 12C: divisão por zero (1 / 0) gera Error 0
+          if (stack.X === 0) {
+            mainDisplay.textContent = "Error 0";
+            prefix = null;
+            updateLedStatus();
+            return;
+          }
+
+          // 3. Calcula o inverso de X mantendo Y, Z e T preservados
+          stack.X = 1 / stack.X;
+          break;
+        }
+
     case "power": {
       // Confirma a entrada do número
       if (isEntering) {
