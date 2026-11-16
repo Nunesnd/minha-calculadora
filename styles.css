@@ -83,6 +83,8 @@ body {
   font-weight: bold;
   color: #334155;
   font-family: monospace;
+  display: flex;
+  justify-content: space-between;
 }
 
 .main-display {

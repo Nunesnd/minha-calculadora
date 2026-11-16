@@ -5,10 +5,12 @@ let isEntering = false;
 let decimals = 2;
 let prefix = null;
 let stackLiftEnabled = true;
+let dateFormat = "MDY"; // "MDY" (americano, padrão) ou "DMY" (brasileiro)
 
 const mainDisplay = document.getElementById("main-display");
 const modifierStatus = document.getElementById("modifier-status");
 const keypad = document.querySelector(".keypad");
+const dateModeStatus = document.getElementById("date-mode-status");
 
 function updateLedStatus() {
   document.body.classList.remove("mode-f-active", "mode-g-active");
@@ -29,7 +31,11 @@ function formatHPNumber(num, decCount) {
 }
 
 function updateDisplay() {
+
 modifierStatus.textContent = prefix ? prefix.toUpperCase() : "";
+  if (dateModeStatus) {
+    dateModeStatus.textContent = dateFormat === "DMY" ? "D.MY" : "";
+  }
 
   if (isEntering) {
     // Se o usuário está digitando, formatamos a parte inteira do buffer sem perder o ponto que ele pode estar colocando
@@ -73,6 +79,18 @@ function handleDigit(digit) {
     return;
   }
 
+  // Novo bloco para o prefixo azul 'g' nas teclas numéricas
+  if (prefix === "g") {
+    if (digit === "4") {
+      dateFormat = "DMY"; // Ativa modo Dia.MêsAno (Brasil)
+    } else if (digit === "5") {
+      dateFormat = "MDY"; // Ativa modo Mês.DiaAno (EUA)
+    }
+    prefix = null;
+    updateDisplay();
+    return;
+  }
+
   if (!isEntering) {
 
     // Só desloca a pilha se a elevação estiver habilitada
@@ -94,6 +112,42 @@ function handleDigit(digit) {
   stack.X = parseFloat(inputBuffer) || 0;
   prefix = null;
   updateDisplay();
+}
+
+function parseHPDate(num) {
+  // Separa parte inteira e os 6 dígitos decimais (ex: 7.091822 -> int=7, dec="091822")
+  const absNum = Math.abs(num);
+  const firstPart = Math.floor(absNum + 1e-9);
+  const fracStr = (absNum - firstPart).toFixed(6).substring(2); // 6 dígitos após o ponto
+
+  const secondPart = parseInt(fracStr.substring(0, 2), 10);
+  const year = parseInt(fracStr.substring(2, 6), 10);
+
+  let day, month;
+  if (dateFormat === "DMY") {
+    day = firstPart;
+    month = secondPart;
+  } else {
+    month = firstPart;
+    day = secondPart;
+  }
+
+  // Validação de limites da HP 12C
+  if (month < 1 || month > 12 || day < 1 || day > 31 || year < 1582 || year > 4046) {
+    return null;
+  }
+
+  // Cria a data em UTC para evitar problemas de horário de verão (DST)
+  const dateObj = new Date(Date.UTC(year, month - 1, day));
+  if (
+    dateObj.getUTCFullYear() !== year ||
+    dateObj.getUTCMonth() !== month - 1 ||
+    dateObj.getUTCDate() !== day
+  ) {
+    return null; // Ex: 30 de fevereiro
+  }
+
+  return { dateObj, day, month, year };
 }
 
 function handleDecimal() {
@@ -212,6 +266,44 @@ function handleAction(action) {
   }
 
   switch (action) {
+
+    case "EEX": {
+      if (isEntering) {
+        stack.X = parseFloat(inputBuffer) || 0;
+        isEntering = false;
+        inputBuffer = "";
+      }
+
+      if (prefix === "g") {
+        // Função ΔDYS: diferença entre data em Y (inicial) e data em X (final)
+        const start = parseHPDate(stack.Y);
+        const end = parseHPDate(stack.X);
+
+        if (!start || !end) {
+          mainDisplay.textContent = "Error 8"; // Código oficial da HP 12C para data inválida
+          prefix = null;
+          updateLedStatus();
+          return;
+        }
+
+        // 1. Dias exatos (calendário civil) -> vai para X
+        const msPerDay = 24 * 60 * 60 * 1000;
+        const actualDays = Math.round((end.dateObj - start.dateObj) / msPerDay);
+
+        // 2. Dias comerciais (base 30/360 padrão HP 12C) -> vai para Y
+        const d1 = Math.min(start.day, 30);
+        const d2 = (end.day === 31 && (start.day === 30 || start.day === 31)) ? 30 : end.day;
+        const days360 = (end.year - start.year) * 360 + (end.month - start.month) * 30 + (d2 - d1);
+
+        // Atualiza X e Y (Z e T permanecem intactos, igual na HP 12C)
+        stack.Y = days360;
+        stack.X = actualDays;
+        break;
+      }
+
+      // Aqui entrará a notação científica (EEX normal) quando não houver prefixo 'g'
+      break;
+    }
 
     case "reciprocal": {
           // 1. Confirma a digitação atual em X, se o usuário estiver digitando
