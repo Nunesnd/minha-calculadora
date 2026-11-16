@@ -221,6 +221,20 @@ function handleAction(action) {
         inputBuffer = "";
       }
 
+        if (prefix === "g") {
+          // Regra da HP 12C: raiz quadrada de número negativo gera Error 0
+          if (stack.X < 0) {
+            mainDisplay.textContent = "Error 0";
+            prefix = null;
+            updateLedStatus();
+            return;
+          }
+
+          // Calcula √X mantendo Y, Z e T intactos
+          stack.X = Math.sqrt(stack.X);
+          break;
+        }
+
       // Recupera os dois operandos antes de alterar a pilha
       const exponent = stack.X;
       const base = stack.Y;
