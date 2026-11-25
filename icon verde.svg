@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 512 512"
+   version="1.1"
+   id="svg1"
+   sodipodi:docname="icon verde.svg"
+   inkscape:version="1.4.4 (dcaf3e7d9e, 2026-05-05)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1">
+    <linearGradient
+       id="linearGradient3"
+       inkscape:collect="always">
+      <stop
+         style="stop-color:#225500;stop-opacity:1;"
+         offset="0"
+         id="stop3" />
+      <stop
+         style="stop-color:#348100;stop-opacity:1;"
+         offset="1"
+         id="stop4" />
+    </linearGradient>
+    <radialGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient3"
+       id="radialGradient4"
+       cx="256"
+       cy="256"
+       fx="256"
+       fy="256"
+       r="256"
+       gradientUnits="userSpaceOnUse" />
+  </defs>
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#505050"
+     bordercolor="#ffffff"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="1"
+     inkscape:deskcolor="#505050"
+     inkscape:zoom="1.5722656"
+     inkscape:cx="255.68199"
+     inkscape:cy="256"
+     inkscape:window-width="1920"
+     inkscape:window-height="1014"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg1" />
+  <rect
+     width="512"
+     height="512"
+     rx="96"
+     fill="#1e293b"
+     id="rect1"
+     style="fill:url(#radialGradient4)" />
+  <text
+     x="50%"
+     y="58%"
+     dominant-baseline="middle"
+     text-anchor="middle"
+     font-family="Arial, sans-serif"
+     font-size="230"
+     font-weight="700"
+     fill="#60a5fa"
+     id="text1">÷</text>
+  <path
+     style="fill:#00ff00;stroke:#000000;stroke-width:0.637026"
+     d="m 242.96149,325.32671 v -12.7205 H 256 269.03851 v 12.7205 12.72049 H 256 242.96149 Z"
+     id="path1" />
+  <path
+     style="fill:#00ff00;stroke:#000000;stroke-width:0.637026"
+     d="M 198.43975,281.12298 V 268.7205 H 256 313.56025 v 12.40248 12.40249 H 256 198.43975 Z"
+     id="path2" />
+  <path
+     style="fill:#00ff00;stroke:#000000;stroke-width:0.637026"
+     d="M 242.96149,236.91925 V 224.19876 H 256 269.03851 v 12.72049 12.7205 H 256 242.96149 Z"
+     id="path3" />
+</svg>

@@ -10,7 +10,18 @@ let prefix = null;
 let stackLiftEnabled = true;
 let dateFormat = "MDY";
 let dateResultDisplay = null;
+let lastX = 0;
+let memReg = {
+  "0": 0, "1": 0, "2": 0, "3": 0, "4": 0,
+  "5": 0, "6": 0, "7": 0, "8": 0, "9": 0,
+  ".0": 0, ".1": 0, ".2": 0, ".3": 0, ".4": 0,
+  ".5": 0, ".6": 0, ".7": 0, ".8": 0, ".9": 0
+};
+// Controla sequências de memória: { mode: "STO" | "RCL", op: "+" | "-" | "*" | "/" | null, dot: boolean }
+let memOp = null;
 
+const beginStatus = document.getElementById("begin-status");
+const compoundStatus = document.getElementById("compound-status");
 const mainDisplay = document.getElementById("main-display");
 const modifierStatus = document.getElementById("modifier-status");
 const keypad = document.querySelector(".keypad");
@@ -35,7 +46,13 @@ function formatHPNumber(num, decCount) {
 }
 
 function updateDisplay() {
-  modifierStatus.textContent = prefix ? prefix.toUpperCase() : "";
+modifierStatus.textContent = prefix ? prefix.toUpperCase() : "";
+  if (beginStatus) {
+    beginStatus.textContent = paymentMode === "BEG" ? "BEGIN" : "";
+  }
+  if (compoundStatus) {
+    compoundStatus.textContent = compoundFraction ? "c" : "";
+  }
   if (dateModeStatus) {
     dateModeStatus.textContent = dateFormat === "DMY" ? "D.MY" : "";
   }
@@ -96,6 +113,43 @@ function handleDigit(digit) {
     return;
   }
 
+  if (memOp !== null) {
+    const regKey = (memOp.dot ? "." : "") + digit;
+    if (memOp.mode === "STO") {
+      if (isEntering) {
+        stack.X = parseFloat(inputBuffer) || 0;
+        isEntering = false;
+        inputBuffer = "";
+      }
+      if (memOp.op === "+") memReg[regKey] += stack.X;
+      else if (memOp.op === "-") memReg[regKey] -= stack.X;
+      else if (memOp.op === "*") memReg[regKey] *= stack.X;
+      else if (memOp.op === "/") {
+        if (stack.X === 0) {
+          mainDisplay.textContent = "Error 0";
+          memOp = null;
+          return;
+        }
+        memReg[regKey] /= stack.X;
+      } else {
+        memReg[regKey] = stack.X;
+      }
+      stackLiftEnabled = true;
+    } else if (memOp.mode === "RCL") {
+      if (isEntering) {
+        isEntering = false;
+        inputBuffer = "";
+      }
+      if (stackLiftEnabled) pushStack(0);
+      stack.X = memReg[regKey];
+      stackLiftEnabled = true;
+    }
+    memOp = null;
+    lastWasTVM = false;
+    updateDisplay();
+    return;
+  }
+
   if (!isEntering) {
     if (stackLiftEnabled) {
       pushStack(0);
@@ -149,6 +203,11 @@ function parseHPDate(num) {
 function handleDecimal() {
   dateResultDisplay = null;
 
+  if (memOp !== null) {
+    memOp.dot = true;
+    return;
+  }
+
   if (prefix === "f") {
     prefix = null;
     updateDisplay();
@@ -181,7 +240,6 @@ function handleEnter() {
     isEntering = false;
     inputBuffer = "";
   }
-
   pushStack(stack.X);
   stackLiftEnabled = false;
   lastWasTVM = false;
@@ -192,12 +250,36 @@ function handleEnter() {
 function handleOperation(op) {
   dateResultDisplay = null;
 
+// Na HP 12C Platinum, g + '+' aciona LST x
+  if (prefix === "g" && op === "+") {
+    if (isEntering) {
+      isEntering = false;
+      inputBuffer = "";
+    }
+    if (stackLiftEnabled) {
+      pushStack(0);
+    }
+    stack.X = lastX;
+    stackLiftEnabled = true;
+    lastWasTVM = false;
+    prefix = null;
+    updateDisplay();
+    return;
+  }
+
+  if (memOp !== null && memOp.mode === "STO" && !memOp.dot) {
+    memOp.op = op;
+    return;
+  }
+  memOp = null; // Cancela memória se outra operação for chamada fora de contexto
+
   if (isEntering) {
     stack.X = parseFloat(inputBuffer) || 0;
     isEntering = false;
     inputBuffer = "";
   }
 
+  lastX = stack.X;
   const x = popStack();
   const y = stack.X;
 
@@ -327,6 +409,7 @@ function handleAction(action) {
   }
 
   dateResultDisplay = null;
+  
 
   if (action === "decimal") {
     handleDecimal();
@@ -348,6 +431,17 @@ function handleAction(action) {
       stack.X = parseFloat(inputBuffer) || 0;
       isEntering = false;
       inputBuffer = "";
+    }
+
+    if (memOp && memOp.mode === "RCL") {
+      if (stackLiftEnabled) pushStack(0);
+      stack.X = finReg[action];
+      memOp = null;
+      lastWasTVM = false;
+      stackLiftEnabled = true;
+      prefix = null;
+      updateDisplay();
+      return;
     }
 
     if (prefix === "g") {
@@ -381,11 +475,41 @@ function handleAction(action) {
   }
 
   switch (action) {
+    case "ON":
+      stack = { X: 0, Y: 0, Z: 0, T: 0 };
+      finReg = { n: 0, i: 0, PV: 0, PMT: 0, FV: 0 };
+      paymentMode = "END";
+      compoundFraction = false;
+      lastWasTVM = false;
+      inputBuffer = "";
+      isEntering = false;
+      decimals = 2;
+      stackLiftEnabled = true;
+      dateFormat = "MDY";
+      dateResultDisplay = null;
+      break;
+
+    case "STO":
+      memOp = { mode: "STO", op: null, dot: false };
+      prefix = null;
+      break;
+
+    case "RCL":
+      memOp = { mode: "RCL", op: null, dot: false };
+      prefix = null;
+      break;
+
     case "EEX": {
       if (isEntering) {
         stack.X = parseFloat(inputBuffer) || 0;
         isEntering = false;
         inputBuffer = "";
+      }
+
+      if (memOp && memOp.mode === "STO") {
+        compoundFraction = !compoundFraction;
+        memOp = null;
+        break;
       }
 
       if (prefix === "g") {
@@ -422,6 +546,8 @@ function handleAction(action) {
         inputBuffer = "";
       }
 
+      lastX = stack.X;
+
       if (stack.X === 0) {
         mainDisplay.textContent = "Error 0";
         prefix = null;
@@ -441,6 +567,8 @@ function handleAction(action) {
         isEntering = false;
         inputBuffer = "";
       }
+
+      lastX = stack.X;
 
       if (prefix === "g") {
         if (stack.X < 0) {
@@ -576,11 +704,19 @@ function handleAction(action) {
     }
 
     case "CLx":
-      stack.X = 0;
+      if (prefix === "f") {
+        stack = { X: 0, Y: 0, Z: 0, T: 0 };
+        lastX = 0;
+        Object.keys(memReg).forEach((k) => { memReg[k] = 0; });
+        stackLiftEnabled = true;
+      } else {
+        stack.X = 0;
+        stackLiftEnabled = false;
+      }
       inputBuffer = "";
       isEntering = false;
-      stackLiftEnabled = false;
       lastWasTVM = false;
+      memOp = null;
       break;
 
     case "swap": {
