@@ -98,7 +98,7 @@ function handleDigit(digit) {
     return;
   }
 
-  if (prefix === "g") {
+if (prefix === "g") {
     if (digit === "4") {
       dateFormat = "DMY";
     } else if (digit === "5") {
@@ -107,6 +107,25 @@ function handleDigit(digit) {
       paymentMode = "BEG";
     } else if (digit === "8") {
       paymentMode = "END";
+    } else if (digit === "3") {
+      // Função n! (fatorial de inteiro não-negativo até 69 na HP 12C)
+      if (isEntering) {
+        stack.X = parseFloat(inputBuffer) || 0;
+        isEntering = false;
+        inputBuffer = "";
+      }
+      if (!Number.isInteger(stack.X) || stack.X < 0 || stack.X > 69) {
+        mainDisplay.textContent = "Error 0";
+        prefix = null;
+        updateLedStatus();
+        return;
+      }
+      lastX = stack.X;
+      let fat = 1;
+      for (let k = 2; k <= stack.X; k++) fat *= k;
+      stack.X = fat;
+      stackLiftEnabled = true;
+      lastWasTVM = false;
     }
     prefix = null;
     updateDisplay();
@@ -396,6 +415,76 @@ function solveTVM(target) {
   }
 }
 
+function calculateSimpleInterest() {
+  const n = finReg.n;
+  const i = finReg.i / 100;
+  const pv = finReg.PV;
+
+  // Na HP 12C, os juros simples têm sinal oposto ao do capital (PV)
+  const int360 = (-pv * i * n) / 360;
+  const int365 = (-pv * i * n) / 365;
+
+  // Pilha conforme manual da HP 12C: X = base 360, Y = base 365, Z = PV
+  stack.T = stack.Z;
+  stack.Z = pv;
+  stack.Y = int365;
+  stack.X = int360;
+
+  stackLiftEnabled = true;
+  lastWasTVM = false;
+}
+
+function calculateAmortization(periodsToAmortize) {
+  const count = Math.trunc(periodsToAmortize);
+  const rate = finReg.i / 100;
+
+  // Validação da HP 12C: número de parcelas deve ser inteiro > 0 e taxa > -100%
+  if (count <= 0 || rate <= -1) {
+    return false;
+  }
+
+  // A HP 12C usa PV, PMT e a própria prestação arredondada nas casas decimais do visor
+  let balance = Number(finReg.PV.toFixed(decimals));
+  const pmt = Number(finReg.PMT.toFixed(decimals));
+  const isBegin = paymentMode === "BEG";
+
+  let totalInterest = 0;
+  let totalPrincipal = 0;
+
+  for (let p = 1; p <= count; p++) {
+    const currentPeriod = finReg.n + p;
+    let interest = 0;
+
+    // No modo BEGIN, a 1ª parcela do contrato (período 1) não incide juros
+    if (!(isBegin && currentPeriod === 1)) {
+      interest = Number((-balance * rate).toFixed(decimals));
+    }
+
+    const principal = Number((pmt - interest).toFixed(decimals));
+    balance = Number((balance + principal).toFixed(decimals));
+
+    totalInterest = Number((totalInterest + interest).toFixed(decimals));
+    totalPrincipal = Number((totalPrincipal + principal).toFixed(decimals));
+  }
+
+  // Atualiza registradores internos (saldo devedor em PV e parcelas acumuladas em n)
+  finReg.PV = balance;
+  finReg.n += count;
+
+  // Atualiza a pilha RPN conforme manual da HP 12C:
+  // X = Juros acumulados | Y = Principal amortizado | Z = Parcelas amortizadas
+  stack.T = stack.X;
+  stack.Z = count;
+  stack.Y = totalPrincipal;
+  stack.X = totalInterest;
+
+  stackLiftEnabled = true;
+  lastWasTVM = false;
+  return true;
+}
+
+
+
 function handleAction(action) {
   if (action === "prefix_f") {
     prefix = prefix === "f" ? null : "f";
@@ -427,10 +516,43 @@ function handleAction(action) {
 
   // Teclas Financeiras (n, i, PV, PMT, FV)
   if (["n", "i", "PV", "PMT", "FV"].includes(action)) {
+  
     if (isEntering) {
       stack.X = parseFloat(inputBuffer) || 0;
       isEntering = false;
       inputBuffer = "";
+    }
+
+    if (prefix === "f" && action === "n") {
+      lastX = stack.X;
+      const ok = calculateAmortization(stack.X);
+      if (!ok) {
+        mainDisplay.textContent = "Error 5";
+        prefix = null;
+        updateLedStatus();
+        return;
+      }
+      prefix = null;
+      updateDisplay();
+      return;
+    }
+
+    if (prefix === "f" && action === "i") {
+      lastX = stack.X;
+      calculateSimpleInterest();
+      prefix = null;
+      updateDisplay();
+      return;
+    }
+       
+    if (prefix === "f" && action === "PMT") {
+      lastX = stack.X;
+      stack.X = Number(stack.X.toFixed(decimals));
+      stackLiftEnabled = true;
+      lastWasTVM = false;
+      prefix = null;
+      updateDisplay();
+      return;
     }
 
     if (memOp && memOp.mode === "RCL") {
@@ -546,6 +668,14 @@ function handleAction(action) {
         inputBuffer = "";
       }
 
+      if (prefix === "g") {
+        lastX = stack.X;
+        stack.X = Math.exp(stack.X);
+        stackLiftEnabled = true;
+        lastWasTVM = false;
+        break;
+      }
+
       lastX = stack.X;
 
       if (stack.X === 0) {
@@ -611,6 +741,15 @@ function handleAction(action) {
         isEntering = false;
         inputBuffer = "";
       }
+
+      if (prefix === "g") {
+        lastX = stack.X;
+        stack.X = Math.trunc(stack.X); // Preserva o sinal (ex: -12.34 -> -12)
+        stackLiftEnabled = true;
+        lastWasTVM = false;
+        break;
+      }
+
       stack.X = (stack.Y * stack.X) / 100;
       stackLiftEnabled = true;
       lastWasTVM = false;
@@ -622,6 +761,15 @@ function handleAction(action) {
         isEntering = false;
         inputBuffer = "";
       }
+
+      if (prefix === "g") {
+        lastX = stack.X;
+        stack.X = stack.X - Math.trunc(stack.X); // Preserva o sinal (ex: -12.34 -> -0.34)
+        stackLiftEnabled = true;
+        lastWasTVM = false;
+        break;
+      }
+
       if (stack.Y === 0) {
         stack.X = 0;
       } else {
@@ -637,6 +785,21 @@ function handleAction(action) {
         isEntering = false;
         inputBuffer = "";
       }
+
+      if (prefix === "g") {
+        if (stack.X <= 0) {
+          mainDisplay.textContent = "Error 0";
+          prefix = null;
+          updateLedStatus();
+          return;
+        }
+        lastX = stack.X;
+        stack.X = Math.log(stack.X);
+        stackLiftEnabled = true;
+        lastWasTVM = false;
+        break;
+      }
+
       if (stack.Y === 0) {
         stack.X = 0;
       } else {
