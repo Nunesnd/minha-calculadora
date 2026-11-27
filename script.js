@@ -17,8 +17,13 @@ let memReg = {
   ".0": 0, ".1": 0, ".2": 0, ".3": 0, ".4": 0,
   ".5": 0, ".6": 0, ".7": 0, ".8": 0, ".9": 0
 };
-// Controla sequências de memória: { mode: "STO" | "RCL", op: "+" | "-" | "*" | "/" | null, dot: boolean }
 let memOp = null;
+
+let njReg = {
+  "0": 1, "1": 1, "2": 1, "3": 1, "4": 1, "5": 1, "6": 1, "7": 1, "8": 1, "9": 1,
+  ".0": 1, ".1": 1, ".2": 1, ".3": 1, ".4": 1, ".5": 1, ".6": 1, ".7": 1, ".8": 1, ".9": 1,
+  "FV": 1
+};
 
 const beginStatus = document.getElementById("begin-status");
 const compoundStatus = document.getElementById("compound-status");
@@ -26,6 +31,22 @@ const mainDisplay = document.getElementById("main-display");
 const modifierStatus = document.getElementById("modifier-status");
 const keypad = document.querySelector(".keypad");
 const dateModeStatus = document.getElementById("date-mode-status");
+
+function getCashFlowKey(j) {
+  if (j >= 0 && j <= 9) return String(j);
+  if (j >= 10 && j <= 19) return "." + (j - 10);
+  if (j === 20) return "FV";
+  return null;
+}
+
+function getCashFlowValue(key) {
+  return key === "FV" ? finReg.FV : memReg[key];
+}
+
+function setCashFlowValue(key, val) {
+  if (key === "FV") finReg.FV = val;
+  else memReg[key] = val;
+}
 
 function updateLedStatus() {
   document.body.classList.remove("mode-f-active", "mode-g-active");
@@ -483,7 +504,111 @@ function calculateAmortization(periodsToAmortize) {
   return true;
 }
 
+function evalNPV(ratePercent, maxGroups) {
+  const r = ratePercent / 100;
+  if (r <= -1) return NaN;
 
+  let npv = getCashFlowValue("0");
+  let t = 0;
+
+  for (let j = 1; j <= maxGroups; j++) {
+    const key = getCashFlowKey(j);
+    const cf = getCashFlowValue(key);
+    const count = njReg[key] || 1;
+
+    for (let k = 0; k < count; k++) {
+      t++;
+      npv += cf / Math.pow(1 + r, t);
+    }
+  }
+  return npv;
+}
+
+function evalNPVDerivative(ratePercent, maxGroups) {
+  const r = ratePercent / 100;
+  const dr = 1 / 100;
+  let dNpv = 0;
+  let t = 0;
+
+  for (let j = 1; j <= maxGroups; j++) {
+    const key = getCashFlowKey(j);
+    const cf = getCashFlowValue(key);
+    const count = njReg[key] || 1;
+
+    for (let k = 0; k < count; k++) {
+      t++;
+      dNpv += (-t * cf / Math.pow(1 + r, t + 1)) * dr;
+    }
+  }
+  return dNpv;
+}
+
+function calculateNPV() {
+  const maxGroups = Math.trunc(finReg.n);
+  if (maxGroups < 0 || maxGroups > 20 || finReg.i <= -100) {
+    return { error: "Error 5" };
+  }
+
+  const npv = evalNPV(finReg.i, maxGroups);
+  if (!Number.isFinite(npv)) return { error: "Error 5" };
+
+  finReg.PV = npv;
+  stack.X = npv;
+  stackLiftEnabled = true;
+  lastWasTVM = true;
+  return { ok: true };
+}
+
+function calculateIRR() {
+  const maxGroups = Math.trunc(finReg.n);
+  if (maxGroups < 1 || maxGroups > 20) {
+    return { error: "Error 5" };
+  }
+
+  // Verifica se existe ao menos uma troca de sinal nos fluxos
+  let hasPos = false;
+  let hasNeg = false;
+  for (let j = 0; j <= maxGroups; j++) {
+    const val = getCashFlowValue(getCashFlowKey(j));
+    if (val > 0) hasPos = true;
+    if (val < 0) hasNeg = true;
+  }
+  if (!hasPos || !hasNeg) {
+    return { error: "Error 5" };
+  }
+
+  // Método de Newton-Raphson com chutes iniciais padrão da HP 12C
+  const guesses = [0, 1, 5, 10, -5, 25, 50, -25, 100];
+
+  for (const startGuess of guesses) {
+    let rate = startGuess;
+    for (let iter = 0; iter < 100; iter++) {
+      const f = evalNPV(rate, maxGroups);
+      if (!Number.isFinite(f)) break;
+
+      if (Math.abs(f) < 1e-8) {
+        if (rate <= -100) return { error: "Error 7" };
+        finReg.i = rate;
+        stack.X = rate;
+        stackLiftEnabled = true;
+        lastWasTVM = true;
+        return { ok: true };
+      }
+
+      const df = evalNPVDerivative(rate, maxGroups);
+      if (Math.abs(df) < 1e-14) break;
+
+      const nextRate = rate - f / df;
+      if (nextRate <= -100) {
+        rate = (rate - 100) / 2;
+      } else {
+        rate = nextRate;
+      }
+    }
+  }
+
+  return { error: "Error 3" };
+}
 
 function handleAction(action) {
   if (action === "prefix_f") {
@@ -517,44 +642,76 @@ function handleAction(action) {
   // Teclas Financeiras (n, i, PV, PMT, FV)
   if (["n", "i", "PV", "PMT", "FV"].includes(action)) {
   
-    if (isEntering) {
-      stack.X = parseFloat(inputBuffer) || 0;
-      isEntering = false;
-      inputBuffer = "";
-    }
+    if (prefix ==="f"){
+      if (isEntering) {
+        stack.X = parseFloat(inputBuffer) || 0;
+        isEntering = false;
+        inputBuffer = "";
+      }
 
-    if (prefix === "f" && action === "n") {
-      lastX = stack.X;
-      const ok = calculateAmortization(stack.X);
-      if (!ok) {
-        mainDisplay.textContent = "Error 5";
+      if (action === "n") {
+        lastX = stack.X;
+        const ok = calculateAmortization(stack.X);
+        if (!ok) {
+          mainDisplay.textContent = "Error 5";
+          prefix = null;
+          updateLedStatus();
+          return;
+        }
         prefix = null;
-        updateLedStatus();
+        updateDisplay();
         return;
       }
-      prefix = null;
-      updateDisplay();
-      return;
-    }
 
-    if (prefix === "f" && action === "i") {
-      lastX = stack.X;
-      calculateSimpleInterest();
-      prefix = null;
-      updateDisplay();
-      return;
-    }
-       
-    if (prefix === "f" && action === "PMT") {
-      lastX = stack.X;
-      stack.X = Number(stack.X.toFixed(decimals));
-      stackLiftEnabled = true;
-      lastWasTVM = false;
-      prefix = null;
-      updateDisplay();
-      return;
-    }
+      if (action === "i") {
+        //f+INT
+        lastX = stack.X;
+        calculateSimpleInterest();
+        prefix = null;
+        updateDisplay();
+        return;
+      }
 
+      if (action === "PV") {
+        // f + NPV
+        const res = calculateNPV();
+        if (res.error) {
+          mainDisplay.textContent = res.error;
+          prefix = null;
+          updateLedStatus();
+          return;
+        }
+        prefix = null;
+        updateDisplay();
+        return;
+      }
+
+      if (action === "PMT") {
+        lastX = stack.X;
+        stack.X = Number(stack.X.toFixed(decimals));
+        stackLiftEnabled = true;
+        lastWasTVM = false;
+        prefix = null;
+        updateDisplay();
+        return;
+      }
+
+      if (action === "FV") {
+        // f + IRR
+        const res = calculateIRR();
+        if (res.error) {
+          mainDisplay.textContent = res.error;
+          prefix = null;
+          updateLedStatus();
+          return;
+        }
+        prefix = null;
+        updateDisplay();
+        return;
+      }
+
+    }
+    
     if (memOp && memOp.mode === "RCL") {
       if (stackLiftEnabled) pushStack(0);
       stack.X = finReg[action];
@@ -565,13 +722,70 @@ function handleAction(action) {
       updateDisplay();
       return;
     }
+  if (prefix === "g") {
+      if (isEntering) {
+        stack.X = parseFloat(inputBuffer) || 0;
+        isEntering = false;
+        inputBuffer = "";
+      }
 
-    if (prefix === "g") {
-      if (action === "n") finReg.n = stack.X * 12;
-      if (action === "i") finReg.i = stack.X / 12;
-      stack.X = finReg[action];
-      lastWasTVM = true;
-    } else if (prefix === null) {
+      if (action === "n") {
+        finReg.n = stack.X * 12;
+        stack.X = finReg.n;
+        lastWasTVM = true;
+      } else if (action === "i") {
+        finReg.i = stack.X / 12;
+        stack.X = finReg.i;
+        lastWasTVM = true;
+      } else if (action === "PV") {
+        // g + CF0
+        setCashFlowValue("0", stack.X);
+        njReg["0"] = 1;
+        finReg.n = 0;
+        lastWasTVM = false;
+      } else if (action === "PMT") {
+        // g + CFj
+        const nextIdx = Math.trunc(finReg.n) + 1;
+        const key = getCashFlowKey(nextIdx);
+        if (!key) {
+          mainDisplay.textContent = "Error 6"; // Limite máximo de 20 grupos de fluxos
+          prefix = null;
+          updateLedStatus();
+          return;
+        }
+        setCashFlowValue(key, stack.X);
+        njReg[key] = 1;
+        finReg.n = nextIdx;
+        lastWasTVM = false;
+      } else if (action === "FV") {
+        // g + Nj
+        const currIdx = Math.trunc(finReg.n);
+        const count = Math.trunc(stack.X);
+        const key = getCashFlowKey(currIdx);
+        if (!key || count < 1 || count > 99) {
+          mainDisplay.textContent = "Error 6";
+          prefix = null;
+          updateLedStatus();
+          return;
+        }
+        njReg[key] = count;
+        lastWasTVM = false;
+      }
+
+stackLiftEnabled = true;
+      prefix = null;
+      updateDisplay();
+      return;
+    }
+
+    // ADICIONE DAQUI PARA BAIXO (cálculo TVM normal + fechamento do bloco):
+    if (prefix === null) {
+      if (isEntering) {
+        stack.X = parseFloat(inputBuffer) || 0;
+        isEntering = false;
+        inputBuffer = "";
+      }
+
       if (!lastWasTVM) {
         finReg[action] = stack.X;
         lastWasTVM = true;
@@ -590,10 +804,11 @@ function handleAction(action) {
       }
     }
 
-    stackLiftEnabled = true;
-    prefix = null;
-    updateDisplay();
-    return;
+      stackLiftEnabled = true;
+      prefix = null;
+      updateDisplay();
+      return;
+
   }
 
   switch (action) {
@@ -871,6 +1086,7 @@ function handleAction(action) {
         stack = { X: 0, Y: 0, Z: 0, T: 0 };
         lastX = 0;
         Object.keys(memReg).forEach((k) => { memReg[k] = 0; });
+        Object.keys(njReg).forEach((k) => { njReg[k] = 1; });
         stackLiftEnabled = true;
       } else {
         stack.X = 0;
