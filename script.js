@@ -147,6 +147,17 @@ if (prefix === "g") {
       stack.X = fat;
       stackLiftEnabled = true;
       lastWasTVM = false;
+    } else if (digit === "0" || digit === "1" || digit === "2" || digit === "6") {
+      const map = { "0": "mean", "1": "x_hat", "2": "y_hat", "6": "weighted_mean" };
+      const err = calcStatMetrics(map[digit]);
+      if (err) {
+        mainDisplay.textContent = err;
+        prefix = null;
+        updateLedStatus();
+        return;
+      }
+      stackLiftEnabled = true;
+      lastWasTVM = false;
     }
     prefix = null;
     updateDisplay();
@@ -249,6 +260,21 @@ function handleDecimal() {
   }
 
   if (prefix === "f") {
+    prefix = null;
+    updateDisplay();
+    return;
+  }
+
+  if (prefix === "g") {
+    const err = calcStatMetrics("std");
+    if (err) {
+      mainDisplay.textContent = err;
+      prefix = null;
+      updateLedStatus();
+      return;
+    }
+    stackLiftEnabled = true;
+    lastWasTVM = false;
     prefix = null;
     updateDisplay();
     return;
@@ -543,6 +569,108 @@ function evalNPVDerivative(ratePercent, maxGroups) {
   return dNpv;
 }
 
+function clearStats() {
+  for (let r = 1; r <= 6; r++) {
+    memReg[String(r)] = 0;
+  }
+}
+
+function handleSigma(sign) {
+  if (isEntering) {
+    stack.X = parseFloat(inputBuffer) || 0;
+    isEntering = false;
+    inputBuffer = "";
+  }
+
+  const x = stack.X;
+  const y = stack.Y;
+  lastX = x;
+
+  memReg["1"] += sign * 1;         // n
+  memReg["2"] += sign * x;         // Σx
+  memReg["3"] += sign * (x * x);   // Σx²
+  memReg["4"] += sign * y;         // Σy
+  memReg["5"] += sign * (y * y);   // Σy²
+  memReg["6"] += sign * (x * y);   // Σxy
+
+  // Na HP 12C, Σ+ e Σ- exibem n em X e desabilitam o stack lift
+  stack.X = memReg["1"];
+  stackLiftEnabled = false;
+  lastWasTVM = false;
+}
+
+function calcStatMetrics(type) {
+  const n = memReg["1"];
+  const sumX = memReg["2"];
+  const sumX2 = memReg["3"];
+  const sumY = memReg["4"];
+  const sumY2 = memReg["5"];
+  const sumXY = memReg["6"];
+
+  if (n <= 0) return "Error 2";
+
+  if (type === "mean") {
+    // g + 0 (x̄): X = média de x, Y = média de y
+    if (stackLiftEnabled) pushStack(0);
+    stack.Y = sumY / n;
+    stack.X = sumX / n;
+    return null;
+  }
+
+  if (type === "std") {
+    // g + . (s): X = desvio padrão amostral de x, Y = desvio padrão amostral de y
+    if (n <= 1) return "Error 2";
+    const varX = (n * sumX2 - sumX * sumX) / (n * (n - 1));
+    const varY = (n * sumY2 - sumY * sumY) / (n * (n - 1));
+    if (varX < 0 || varY < 0) return "Error 2";
+    if (stackLiftEnabled) pushStack(0);
+    stack.Y = Math.sqrt(varY);
+    stack.X = Math.sqrt(varX);
+    return null;
+  }
+
+  if (type === "weighted_mean") {
+    // g + 6 (x̄w): média ponderada = Σxy / Σy (onde X = valor, Y = peso)
+    if (sumY === 0) return "Error 2";
+    if (stackLiftEnabled) pushStack(0);
+    stack.X = sumXY / sumY;
+    return null;
+  }
+
+  if (type === "x_hat" || type === "y_hat") {
+    // Regressão linear (g + 1 para x̂,r e g + 2 para ŷ,r)
+    if (isEntering) {
+      stack.X = parseFloat(inputBuffer) || 0;
+      isEntering = false;
+      inputBuffer = "";
+    }
+    const inputVal = stack.X;
+    lastX = inputVal;
+
+    const denomX = n * sumX2 - sumX * sumX;
+    const denomY = n * sumY2 - sumY * sumY;
+    if (denomX === 0 || denomY === 0) return "Error 2";
+
+    const num = n * sumXY - sumX * sumY;
+    const r = num / Math.sqrt(denomX * denomY);
+
+    if (type === "y_hat") {
+      const m = num / denomX;
+      const b = (sumY - m * sumX) / n;
+      stack.Y = r;
+      stack.X = m * inputVal + b;
+    } else {
+      const m = num / denomX;
+      const b = (sumY - m * sumX) / n;
+      if (m === 0) return "Error 2";
+      stack.Y = r;
+      stack.X = (inputVal - b) / m;
+    }
+    return null;
+  }
+  return null;
+}
+
 function calculateNPV() {
   const maxGroups = Math.trunc(finReg.n);
   if (maxGroups < 0 || maxGroups > 20 || finReg.i <= -100) {
@@ -835,6 +963,22 @@ stackLiftEnabled = true;
       memOp = { mode: "RCL", op: null, dot: false };
       prefix = null;
       break;
+
+    case "sigma_plus":
+    if (prefix === "f") {
+      clearStats();
+      stack = { X: 0, Y: 0, Z: 0, T: 0 };
+      lastX = 0;
+      inputBuffer = "";
+      isEntering = false;
+      stackLiftEnabled = true;
+      lastWasTVM = false;
+    } else if (prefix === "g") {
+      handleSigma(-1);
+    } else {
+      handleSigma(1);
+    }
+    break;
 
     case "EEX": {
       if (isEntering) {
